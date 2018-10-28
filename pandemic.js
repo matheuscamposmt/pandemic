@@ -12,6 +12,9 @@ function Pandemic() {
     this.infectionRateHandler = new InfectionRateHandler();
     this.infectionDeck = new InfectionDeck(this.cities);
 
+    this.numberOfActionsPerTurn = 4;
+    this.numberOfActionsLeft = this.numberOfActionsPerTurn;
+
     this.startGame();
 }
 
@@ -63,6 +66,13 @@ Pandemic.prototype.update = function(mousePressed, mouseX, mouseY) {
             }
         }
     }
+    
+    if (this.numberOfActionsLeft == 0) {
+        var city = this.infectionDeck.getCard();
+        city.startInfection(this.outbreakMarker, this.infectionCubeHandler, this.cureHandler);
+	// TODO: Draw 2 player cards
+	this.numberOfActionsLeft = this.numberOfActionsPerTurn;
+    }
 }
 
 Pandemic.prototype.handleAction = function(currentPlayer, city, mouseX, mouseY) {
@@ -77,8 +87,10 @@ Pandemic.prototype.handleAction = function(currentPlayer, city, mouseX, mouseY) 
             this.cureHandler.makeCure("Blue");
         } else {
             console.log("Nothing");
+	    return;
         }
     }
+    this.numberOfActionsLeft--;
 }
 
 Pandemic.prototype.hasLost = function() {
