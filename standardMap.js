@@ -87,7 +87,7 @@ StandardMap.prototype.setupCities = function() {
     Johannesburg.setNeighborCities([Kinshasa, Khartoum]);
 
     // Black
-    Moscow.setNeighborCities([StPetersburg, Istanbul]);
+    Moscow.setNeighborCities([StPetersburg, Istanbul, Tehran]);
     Istanbul.setNeighborCities([Milan, StPetersburg, Moscow, Algiers, Cairo, Baghdad]);
     Algiers.setNeighborCities([Madrid, Paris, Istanbul, Cairo]);
     Cairo.setNeighborCities([Khartoum, Istanbul, Algiers, Baghdad, Riyadh]);
