@@ -8,7 +8,6 @@ InfectionDeck.prototype.getCard = function() {
 	throw "Cannot get card from empty deck";
     }
     var card = this.deck.pop();
-    console.log(this.deck);
     return card;
 }
 
