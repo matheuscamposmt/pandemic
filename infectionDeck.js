@@ -1,12 +1,14 @@
 function InfectionDeck(cities) {
     this.deck = cities.slice(); // NB. this keeps the pointers of the underlying objects
     this.shuffle(this.deck);
-    this.indexOfTopCard = this.deck.length - 1;
 }
 
 InfectionDeck.prototype.getCard = function() {
-    var card = this.deck[this.indexOfTopCard];
-    this.indexOfTopCard--;
+    if (this.deck.length <= 0) {
+	throw "Cannot get card from empty deck";
+    }
+    var card = this.deck.pop();
+    console.log(this.deck);
     return card;
 }
 
