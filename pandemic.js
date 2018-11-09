@@ -2,7 +2,7 @@ function Pandemic() {
     var map = new StandardMap();
     this.cities = map.setupCities();
     var Atlanta = this.cities[0];
-    this.players = [new Player(Atlanta)];
+    this.players = [new Player(Atlanta), new Player(Atlanta)];
     this.numberOfPlayers = numberOfPlayers;
     this.playerTurn = 0;
 
@@ -70,8 +70,9 @@ Pandemic.prototype.update = function(mousePressed, mouseX, mouseY) {
     if (this.numberOfActionsLeft == 0) {
         var city = this.infectionDeck.getCard();
         city.startInfection(this.outbreakMarker, this.infectionCubeHandler, this.cureHandler);
-	// TODO: Draw 2 player cards
-	this.numberOfActionsLeft = this.numberOfActionsPerTurn;
+        // TODO: Draw 2 player cards
+        this.numberOfActionsLeft = this.numberOfActionsPerTurn;
+        this.nextPlayer();
     }
 }
 
@@ -91,6 +92,10 @@ Pandemic.prototype.handleAction = function(currentPlayer, city, mouseX, mouseY) 
         }
     }
     this.numberOfActionsLeft--;
+}
+
+Pandemic.prototype.nextPlayer = function() {
+	this.playerTurn = (this.playerTurn + 1) % this.players.length;
 }
 
 Pandemic.prototype.hasLost = function() {
