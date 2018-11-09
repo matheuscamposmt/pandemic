@@ -90,6 +90,9 @@ Pandemic.prototype.handleAction = function(currentPlayer, city, mouseX, mouseY) 
             console.log("Nothing");
 	    return;
         }
+    } else {
+        console.log("Nothing");
+	return;
     }
     this.numberOfActionsLeft--;
 }
