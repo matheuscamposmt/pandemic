@@ -90,8 +90,9 @@ var settingsUpdate = function() {
 }
 
 // Functionality
-var numberOfPlayers = 1
-var game = new Pandemic(numberOfPlayers);
+var numberOfPlayers = 2;
+var difficulty = 2;
+var game = new Pandemic(numberOfPlayers, difficulty);
 
 var step = function () {
     game.render();

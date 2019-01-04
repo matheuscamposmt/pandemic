@@ -1,8 +1,12 @@
-function Pandemic() {
+function Pandemic(numberOfPlayers, difficulty) {
     var map = new StandardMap();
     this.cities = map.setupCities();
     var Atlanta = this.cities[0];
-    this.players = [new Player(Atlanta), new Player(Atlanta)];
+    this.players = [];
+	for (var playerNumber = 0; playerNumber < numberOfPlayers; playerNumber++) {
+		var newPlayer = new Player(Atlanta);
+		this.players.push(newPlayer);
+	}
     this.numberOfPlayers = numberOfPlayers;
     this.playerTurn = 0;
 
