@@ -90,15 +90,34 @@ var settingsUpdate = function() {
 }
 
 // Functionality
-var numberOfPlayers = 2;
-var difficulty = 2;
-var game = new Pandemic(numberOfPlayers, difficulty);
+var state = "MENU";
+var menu = new Menu();
+var game;
 
 var step = function () {
-    game.render();
-    game.update(mousePressed, xNew, yNew);
-    mousePressed = false;
-    animate(step);
+	switch (state) {
+		case "MENU":
+			if (menu.getIsConfigured()) {
+				var numberOfPlayers = menu.getNumberOfPlayers();
+				var difficulty = menu.getDifficulty();
+				game = new Pandemic(numberOfPlayers, difficulty);
+				state = "GAME";
+			} else {
+				menu.render();
+				menu.update(mousePressed, xNew, yNew);
+				mousePressed = false;
+			}
+			break;
+		case "GAME":
+			game.render();
+			game.update(mousePressed, xNew, yNew);
+			mousePressed = false;
+			break;
+		default:
+			console.log("Invalid state!");
+			break;
+	}
+	animate(step);
 };
 
 // Library
