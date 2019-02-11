@@ -1,7 +1,7 @@
 function Menu() {
     this.isConfigured = false;
-	this.numberOfPlayers;
-	this.difficulty;	
+	this.numberOfPlayers = 2;
+	this.difficulty = "Easy";
 }
 
 Menu.prototype.getIsConfigured = function() {
@@ -17,15 +17,17 @@ Menu.prototype.getDifficulty = function() {
 }
 
 Menu.prototype.render = function () {
-	context.fillStyle = BLACK;
+	context.fillStyle = FOAM;
     context.fillRect(0, 0, WIDTH, HEIGHT);
-    this.renderText();
+	this.drawNumberOfPlayersSelection();
+	this.drawDifficultySelection();
+	this.renderText();
 };
 
 Menu.prototype.renderText = function() {
     var vOffset = 0;
-    this.drawText("Number of players:  1  2  3  4",  WHITE, 0);
-    this.drawText("Difficulty:  Easy  Medium  Hard", WHITE, 40);
+    this.drawText("Number of players:  2  3  4",  BLACK, 0);
+    this.drawText("Difficulty:  Easy  Medium  Hard", BLACK, 40);
 }
 
 Menu.prototype.drawText = function(value, textColorHex, vOffset) {
@@ -42,6 +44,34 @@ Menu.prototype.drawText = function(value, textColorHex, vOffset) {
     context.fillText(value, x + width / 2, y + height / 2 + vOffset);
 }
 
+Menu.prototype.drawNumberOfPlayersSelection = function() {
+	var x, y = 5, width = 11, height = 10;
+	if (this.numberOfPlayers === 2) {
+		x = 197;
+	} else if (this.numberOfPlayers === 3) {
+		x = 208;
+	} else if (this.numberOfPlayers === 4) {
+		x = 219;
+	}
+	context.fillStyle = LAVENDER_BLUSH;
+	context.fillRect(x, y, width, height);
+}
+
+Menu.prototype.drawDifficultySelection = function() {
+	var x, y = 45, width, height = 10;
+	if (this.difficulty === "Easy") {
+		x = 155;
+		width = 24;
+	} else if (this.difficulty === "Medium") {
+		x = 182;
+		width = 40;
+	} else if (this.difficulty === "Hard") {
+		x = 223;
+		width = 25;
+	}
+	context.fillStyle = LAVENDER_BLUSH;
+	context.fillRect(x, y, width, height);
+}
 
 Menu.prototype.update = function(mousePressed, mouseX, mouseY) {
     
