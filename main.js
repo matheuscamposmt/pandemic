@@ -92,6 +92,7 @@ var settingsUpdate = function() {
 // Functionality
 var state = "MENU";
 var menu = new Menu();
+menu.isConfigured = true; // TODO: Temporary until menu has been developed
 var game;
 
 var step = function () {
