@@ -1,27 +1,27 @@
 function InfectionCubeHandler() {
     var initialValue = 24;
 
-    this.numberOfBlueCubes   = initialValue;
+    this.numberOfBlueCubes = initialValue;
     this.numberOfYellowCubes = initialValue;
-    this.numberOfBlackCubes  = initialValue;
-    this.numberOfRedCubes    = initialValue;
+    this.numberOfBlackCubes = initialValue;
+    this.numberOfRedCubes = initialValue;
 }
 
-InfectionCubeHandler.prototype.render = function() {
-    context.textAlign = "center"; 
-    context.textBaseline="middle";
+InfectionCubeHandler.prototype.render = function () {
+    context.textAlign = "center";
+    context.textBaseline = "middle";
     context.font = 10 + "px Arial";
 
     var vOffset = 0;
-    this.renderStat(this.numberOfBlueCubes,   BLUE,   WHITE, 0);
+    this.renderStat(this.numberOfBlueCubes, BLUE, WHITE, 0);
     this.renderStat(this.numberOfYellowCubes, YELLOW, BLACK, 20);
-    this.renderStat(this.numberOfBlackCubes,  BLACK,  WHITE, 40);
-    this.renderStat(this.numberOfRedCubes,    RED,    WHITE, 60);
+    this.renderStat(this.numberOfBlackCubes, BLACK, WHITE, 40);
+    this.renderStat(this.numberOfRedCubes, RED, WHITE, 60);
 }
 
-InfectionCubeHandler.prototype.renderStat = function(value, colorHex, textColorHex, vOffset) {
+InfectionCubeHandler.prototype.renderStat = function (value, colorHex, textColorHex, vOffset) {
     var x = 0;
-    var y = 0;    
+    var y = 0;
     var width = 20;
     var height = 20;
 
@@ -31,30 +31,30 @@ InfectionCubeHandler.prototype.renderStat = function(value, colorHex, textColorH
     context.fillText(value, x + width / 2, y + height / 2 + vOffset);
 }
 
-InfectionCubeHandler.prototype.incr = function(color, numberOfCubes) {
-    if      (isBlue(color))   this.numberOfBlueCubes   += numberOfCubes;
-    else if (isYellow(color)) this.numberOfYellowCubes += numberOfCubes;        
-    else if (isBlack(color))  this.numberOfBlackCubes  += numberOfCubes;
-    else if (isRed(color))    this.numberOfRedCubes    += numberOfCubes;
+InfectionCubeHandler.prototype.incr = function (color, numberOfCubes) {
+    if (isBlue(color)) this.numberOfBlueCubes += numberOfCubes;
+    else if (isYellow(color)) this.numberOfYellowCubes += numberOfCubes;
+    else if (isBlack(color)) this.numberOfBlackCubes += numberOfCubes;
+    else if (isRed(color)) this.numberOfRedCubes += numberOfCubes;
     else {
         console.log("Unsupported color: " + color);
     }
 }
 
-InfectionCubeHandler.prototype.decr = function(color, numberOfCubes) {
-    if      (isBlue(color))   this.numberOfBlueCubes   -= numberOfCubes;
-    else if (isYellow(color)) this.numberOfYellowCubes -= numberOfCubes;        
-    else if (isBlack(color))  this.numberOfBlackCubes  -= numberOfCubes;
-    else if (isRed(color))    this.numberOfRedCubes    -= numberOfCubes;
+InfectionCubeHandler.prototype.decr = function (color, numberOfCubes) {
+    if (isBlue(color)) this.numberOfBlueCubes -= numberOfCubes;
+    else if (isYellow(color)) this.numberOfYellowCubes -= numberOfCubes;
+    else if (isBlack(color)) this.numberOfBlackCubes -= numberOfCubes;
+    else if (isRed(color)) this.numberOfRedCubes -= numberOfCubes;
     else {
         console.log("Unsupported color: " + color);
     }
 }
 
-InfectionCubeHandler.prototype.hasLost = function() {
-    var remainingBlueCubes   = 0 < this.numberOfBlueCubes;
+InfectionCubeHandler.prototype.hasLost = function () {
+    var remainingBlueCubes = 0 < this.numberOfBlueCubes;
     var remainingYellowCubes = 0 < this.numberOfYellowCubes;
-    var remainingBlackCubes  = 0 < this.numberOfBlackCubes;
-    var remainingRedCubes    = 0 < this.numberOfRedCubes;
+    var remainingBlackCubes = 0 < this.numberOfBlackCubes;
+    var remainingRedCubes = 0 < this.numberOfRedCubes;
     return !remainingBlueCubes || !remainingYellowCubes || !remainingBlackCubes || !remainingRedCubes;
 }

@@ -3,10 +3,10 @@ function Pandemic(numberOfPlayers, difficulty) {
     this.cities = map.setupCities();
     var Atlanta = this.cities[0];
     this.players = [];
-	for (var playerNumber = 0; playerNumber < numberOfPlayers; playerNumber++) {
-		var newPlayer = new Player(Atlanta);
-		this.players.push(newPlayer);
-	}
+    for (var playerNumber = 0; playerNumber < numberOfPlayers; playerNumber++) {
+        var newPlayer = new Player(Atlanta);
+        this.players.push(newPlayer);
+    }
     this.numberOfPlayers = numberOfPlayers;
     this.playerTurn = 0;
 
@@ -22,13 +22,13 @@ function Pandemic(numberOfPlayers, difficulty) {
     this.startGame();
 }
 
-Pandemic.prototype.startGame = function() {
+Pandemic.prototype.startGame = function () {
     var Atlanta = this.cities[0];
     Atlanta.makeResearchCenter();
     this.startGameInfectCities();
 }
 
-Pandemic.prototype.startGameInfectCities = function() {
+Pandemic.prototype.startGameInfectCities = function () {
     var numberOfCitiesToInfectPerRound = 3;
     var numberOfRounds = 3;
     for (var i = numberOfRounds; 0 < i; i--) {
@@ -55,11 +55,11 @@ Pandemic.prototype.render = function () {
     }
 };
 
-Pandemic.prototype.update = function(mousePressed, mouseX, mouseY) {
-    if(this.hasLost()) {
+Pandemic.prototype.update = function (mousePressed, mouseX, mouseY) {
+    if (this.hasLost()) {
         // console.log("You lost!");
     }
-    
+
     var currentPlayer = this.players[this.playerTurn];
     if (mousePressed) {
         for (var i = 0; i < this.cities.length; i++) {
@@ -70,19 +70,19 @@ Pandemic.prototype.update = function(mousePressed, mouseX, mouseY) {
             }
         }
     }
-    
+
     if (this.numberOfActionsLeft == 0) {
-	for (var infectionNumber = 0; infectionNumber < this.infectionRateHandler.getInfectionRate(); infectionNumber++) {
+        for (var infectionNumber = 0; infectionNumber < this.infectionRateHandler.getInfectionRate(); infectionNumber++) {
             var city = this.infectionDeck.getCard();
             city.startInfection(this.outbreakMarker, this.infectionCubeHandler, this.cureHandler);
-	}
+        }
         // TODO: Draw 2 player cards
         this.numberOfActionsLeft = this.numberOfActionsPerTurn;
         this.nextPlayer();
     }
 }
 
-Pandemic.prototype.handleAction = function(currentPlayer, city, mouseX, mouseY) {
+Pandemic.prototype.handleAction = function (currentPlayer, city, mouseX, mouseY) {
     if (city.neighborCities.contains(currentPlayer.city)) {
         currentPlayer.update(city);
     } else if (city === currentPlayer.city) {
@@ -94,20 +94,20 @@ Pandemic.prototype.handleAction = function(currentPlayer, city, mouseX, mouseY) 
             this.cureHandler.makeCure("Blue");
         } else {
             console.log("Nothing");
-	    return;
+            return;
         }
     } else {
         console.log("Nothing");
-	return;
+        return;
     }
     this.numberOfActionsLeft--;
 }
 
-Pandemic.prototype.nextPlayer = function() {
-	this.playerTurn = (this.playerTurn + 1) % this.players.length;
+Pandemic.prototype.nextPlayer = function () {
+    this.playerTurn = (this.playerTurn + 1) % this.players.length;
 }
 
-Pandemic.prototype.hasLost = function() {
+Pandemic.prototype.hasLost = function () {
     return this.infectionCubeHandler.hasLost()
         || this.outbreakMarker.hasLost();
 }

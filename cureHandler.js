@@ -5,7 +5,7 @@ function CureHandler() {
     this.hasCureRed = false;
 }
 
-CureHandler.prototype.render = function() {
+CureHandler.prototype.render = function () {
     var x = 398;
     var y = 785;
     var width = 20;
@@ -27,7 +27,7 @@ CureHandler.prototype.render = function() {
     }
 }
 
-CureHandler.prototype.makeCure = function(color) {
+CureHandler.prototype.makeCure = function (color) {
     if (isBlue(color)) {
         this.hasCureBlue = true;
     } else if (isYellow(color)) {
@@ -41,7 +41,7 @@ CureHandler.prototype.makeCure = function(color) {
     }
 }
 
-CureHandler.prototype.hasCure = function(color) {
+CureHandler.prototype.hasCure = function (color) {
     if (isBlue(color)) {
         return this.hasCureBlue;
     } else if (isYellow(color)) {

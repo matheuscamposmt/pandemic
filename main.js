@@ -45,18 +45,18 @@ window.addEventListener("keyup", function (event) {
     delete keysDown[event.keyCode];
 });
 
-canvas.addEventListener('mousemove', function(evt) {
+canvas.addEventListener('mousemove', function (evt) {
     mousePos = getMousePos(canvas, evt);
 }, false);
 
-canvas.addEventListener('mousedown', function(evt) {
+canvas.addEventListener('mousedown', function (evt) {
     mouseDown = true;
     var mousePos = getMousePos(canvas, evt);
     xOld = Math.floor(mousePos.x);
     yOld = Math.floor(mousePos.y);
 }, false);
 
-canvas.addEventListener('mouseup', function(evt) {
+canvas.addEventListener('mouseup', function (evt) {
     mouseDown = false;
     mousePressed = true;
     var mousePos = getMousePos(canvas, evt);
@@ -72,17 +72,17 @@ function isCanvasSupported() {
 }
 
 // Utility
-var getMousePos = function(canvas, evt) {
+var getMousePos = function (canvas, evt) {
     var rect = canvas.getBoundingClientRect();
     return {
-        x: (evt.clientX-rect.left)/(rect.right-rect.left)*canvas.width,
-        y: (evt.clientY-rect.top )/(rect.bottom-rect.top)*canvas.height
+        x: (evt.clientX - rect.left) / (rect.right - rect.left) * canvas.width,
+        y: (evt.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height
     };
 }
 
-var settingsUpdate = function() {
+var settingsUpdate = function () {
     SCALE = document.getElementById('scale').value;
-    WIDTH  = SCALE * 1200;
+    WIDTH = SCALE * 1200;
     HEIGHT = SCALE * 849;
     canvas.width = WIDTH;
     canvas.height = HEIGHT;
@@ -96,33 +96,33 @@ menu.isConfigured = true; // TODO: Temporary until menu has been developed
 var game;
 
 var step = function () {
-	switch (state) {
-		case "MENU":
-			if (menu.getIsConfigured()) {
-				var numberOfPlayers = menu.getNumberOfPlayers();
-				var difficulty = menu.getDifficulty();
-				game = new Pandemic(numberOfPlayers, difficulty);
-				state = "GAME";
-			} else {
-				menu.render();
-				menu.update(mousePressed, xNew, yNew);
-				mousePressed = false;
-			}
-			break;
-		case "GAME":
-			game.render();
-			game.update(mousePressed, xNew, yNew);
-			mousePressed = false;
-			break;
-		default:
-			console.log("Invalid state!");
-			break;
-	}
-	animate(step);
+    switch (state) {
+        case "MENU":
+            if (menu.getIsConfigured()) {
+                var numberOfPlayers = menu.getNumberOfPlayers();
+                var difficulty = menu.getDifficulty();
+                game = new Pandemic(numberOfPlayers, difficulty);
+                state = "GAME";
+            } else {
+                menu.render();
+                menu.update(mousePressed, xNew, yNew);
+                mousePressed = false;
+            }
+            break;
+        case "GAME":
+            game.render();
+            game.update(mousePressed, xNew, yNew);
+            mousePressed = false;
+            break;
+        default:
+            console.log("Invalid state!");
+            break;
+    }
+    animate(step);
 };
 
 // Library
-Array.prototype.contains = function(obj) {
+Array.prototype.contains = function (obj) {
     var i = this.length;
     while (i--) {
         if (this[i] === obj) {

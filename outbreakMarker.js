@@ -3,7 +3,7 @@ function OutbreakMarker() {
     this.maximumNumberOfOutbreaks = 8;
 }
 
-OutbreakMarker.prototype.render = function() {
+OutbreakMarker.prototype.render = function () {
     var xEven = 85;
     var xOdd = 127;
 
@@ -14,11 +14,11 @@ OutbreakMarker.prototype.render = function() {
     context.fillRect(x, y, 20, 20);
 }
 
-OutbreakMarker.prototype.incr = function() {
+OutbreakMarker.prototype.incr = function () {
     this.numberOfOutbreaks++;
     this.numberOfOutbreaks = Math.min(this.maximumNumberOfOutbreaks, this.numberOfOutbreaks);
 }
 
-OutbreakMarker.prototype.hasLost = function() {
+OutbreakMarker.prototype.hasLost = function () {
     return this.numberOfOutbreaks == this.maximumNumberOfOutbreaks;
 }

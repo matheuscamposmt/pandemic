@@ -11,7 +11,7 @@ html {
 }
 
 body, html {
-    background-image:url('background.jpg');
+    background-image: url('background.jpg');
     margin: 0;
     padding: 0;
     font-family: Arial, Helvetica, sans-serif;
@@ -29,5 +29,5 @@ h1 {
     font-weight: bolder;
     margin: 0;
     float: left;
-/* display: inline; */
+    /* display: inline; */
 }

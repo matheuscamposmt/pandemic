@@ -3,15 +3,15 @@ function InfectionDeck(cities) {
     this.shuffle(this.deck);
 }
 
-InfectionDeck.prototype.getCard = function() {
+InfectionDeck.prototype.getCard = function () {
     if (this.deck.length <= 0) {
-	throw "Cannot get card from empty deck";
+        throw "Cannot get card from empty deck";
     }
     var card = this.deck.pop();
     return card;
 }
 
-InfectionDeck.prototype.shuffle = function(deck) {
+InfectionDeck.prototype.shuffle = function (deck) {
     var randomIndex, x, i;
     for (i = deck.length; 0 < i; i--) {
         randomIndex = Math.floor(Math.random() * i);

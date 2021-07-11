@@ -13,13 +13,13 @@ function City(name, x, y, color) {
     this.hasResearchCenter = false;
 }
 
-City.prototype.render = function() {
+City.prototype.render = function () {
     var hOffset = 20;
 
     context.fillStyle = LAVENDER_BLUSH;
     context.fillStyle = BLACK;
-    context.textAlign = "center"; 
-    context.textBaseline="middle";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
     context.font = 10 + "px Arial";
 
     var vOffset = 0;
@@ -48,41 +48,41 @@ City.prototype.render = function() {
     // }
 }
 
-City.prototype.isClicked = function(pointX, pointY) {
+City.prototype.isClicked = function (pointX, pointY) {
     var isCityClicked = this.isCityClicked(pointX, pointY);
     var isInfectionClicked = this.isInfectionClicked(pointX, pointY);
     var isResearchCenterClicked = this.isResearchCenterClicked(pointX, pointY);
     return isCityClicked || isInfectionClicked || isResearchCenterClicked;
 }
 
-City.prototype.isCityClicked = function(pointX, pointY) {
+City.prototype.isCityClicked = function (pointX, pointY) {
     return pointIntersectsWithSquare(pointX, pointY, this.x, this.y, this.width, this.height);
 }
 
-var pointIntersectsWithSquare = function(pointX, pointY, squareX, squareY, squareWidth, squareHeight) {
-     return squareX <= pointX && pointX <= squareX + squareWidth
-        &&  squareY <= pointY && pointY <= squareY + squareHeight;
+var pointIntersectsWithSquare = function (pointX, pointY, squareX, squareY, squareWidth, squareHeight) {
+    return squareX <= pointX && pointX <= squareX + squareWidth
+        && squareY <= pointY && pointY <= squareY + squareHeight;
 }
 
-City.prototype.setNeighborCities = function(cities) {
+City.prototype.setNeighborCities = function (cities) {
     this.neighborCities = cities;
 }
 
 // Infections
 /// public
-City.prototype.startMultipleInfections = function(outbreakMarker, infectionCubeHandler, cureHandler, numberOfInfections) {
+City.prototype.startMultipleInfections = function (outbreakMarker, infectionCubeHandler, cureHandler, numberOfInfections) {
     for (var i = 0; i < numberOfInfections; i++) {
         this.startInfection(outbreakMarker, infectionCubeHandler, cureHandler);
     }
 }
 
-City.prototype.startInfection = function(outbreakMarker, infectionCubeHandler, cureHandler) {
+City.prototype.startInfection = function (outbreakMarker, infectionCubeHandler, cureHandler) {
     this.infect(this.color, outbreakMarker, infectionCubeHandler, cureHandler);
     this.cleanInfectionFlag();
 }
 
 /// private
-City.prototype.infect = function(color, outbreakMarker, infectionCubeHandler, cureHandler) {
+City.prototype.infect = function (color, outbreakMarker, infectionCubeHandler, cureHandler) {
     if (this.wasOutbreakInThisRound) return;
     if (cureHandler.hasCure(color)) return;
 
@@ -91,10 +91,10 @@ City.prototype.infect = function(color, outbreakMarker, infectionCubeHandler, cu
 
         var colorHex;
 
-        if      (color === "Blue")   colorHex = BLUE;
+        if (color === "Blue") colorHex = BLUE;
         else if (color === "Yellow") colorHex = YELLOW;
-        else if (color === "Black")  colorHex = BLACK;
-        else if (color === "Red")    colorHex = RED;
+        else if (color === "Black") colorHex = BLACK;
+        else if (color === "Red") colorHex = RED;
         else console.log("Unsupported color: " + color);
 
         this.infections.push(colorHex);
@@ -103,7 +103,7 @@ City.prototype.infect = function(color, outbreakMarker, infectionCubeHandler, cu
     }
 }
 
-City.prototype.outbreak = function(outbreakMarker, infectionCubeHandler, cureHandler) {
+City.prototype.outbreak = function (outbreakMarker, infectionCubeHandler, cureHandler) {
     this.wasOutbreakInThisRound = true;
     outbreakMarker.incr();
 
@@ -113,7 +113,7 @@ City.prototype.outbreak = function(outbreakMarker, infectionCubeHandler, cureHan
     }
 }
 
-City.prototype.cleanInfectionFlag = function() {
+City.prototype.cleanInfectionFlag = function () {
     if (!this.wasOutbreakInThisRound) return;
 
     this.wasOutbreakInThisRound = false;
@@ -122,11 +122,11 @@ City.prototype.cleanInfectionFlag = function() {
     }
 }
 
-City.prototype.isInfected = function() {
+City.prototype.isInfected = function () {
     return 0 < this.infections.length;
 }
 
-City.prototype.disinfect = function(infectionCubeHandler, cureHandler, pointX, pointY) {
+City.prototype.disinfect = function (infectionCubeHandler, cureHandler, pointX, pointY) {
     if (this.isInfected()) {
         var infectionIndex = this.getClickedInfection(pointX, pointY);
         if (infectionIndex == undefined) infectionIndex = this.infections.length - 1;
@@ -147,11 +147,11 @@ City.prototype.disinfect = function(infectionCubeHandler, cureHandler, pointX, p
     }
 }
 
-City.prototype.isInfectionClicked = function(pointX, pointY) {
+City.prototype.isInfectionClicked = function (pointX, pointY) {
     return this.getClickedInfection(pointX, pointY) != undefined;
 }
 
-City.prototype.getClickedInfection = function(pointX, pointY) {
+City.prototype.getClickedInfection = function (pointX, pointY) {
     var vOffset = 0;
     for (var i = 0; i < this.infections.length; i++) {
         var intersects = pointIntersectsWithSquare(pointX, pointY, this.x + this.width, this.y + vOffset, this.width, this.height);
@@ -164,10 +164,10 @@ City.prototype.getClickedInfection = function(pointX, pointY) {
 }
 
 // Research center
-City.prototype.isResearchCenterClicked = function(pointX, pointY) {
+City.prototype.isResearchCenterClicked = function (pointX, pointY) {
     return this.hasResearchCenter && pointIntersectsWithSquare(pointX, pointY, this.x - this.width, this.y, this.width, this.height);
 }
 
-City.prototype.makeResearchCenter = function() {
+City.prototype.makeResearchCenter = function () {
     this.hasResearchCenter = true;
 }

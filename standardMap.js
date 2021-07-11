@@ -1,7 +1,7 @@
 function StandardMap() {
 }
 
-StandardMap.prototype.setupCities = function() {
+StandardMap.prototype.setupCities = function () {
     // Blue
     var Atlanta = new City("Atlanta", 227, 316, "Blue");
     var Chicago = new City("Chicago", 197, 255, "Blue");
