@@ -83,7 +83,7 @@ Pandemic.prototype.update = function (mousePressed, mouseX, mouseY) {
 }
 
 Pandemic.prototype.handleAction = function (currentPlayer, city, mouseX, mouseY) {
-    if (city.neighborCities.contains(currentPlayer.city)) {
+    if (city.neighborCities.includes(currentPlayer.city)) {
         currentPlayer.update(city);
     } else if (city === currentPlayer.city) {
         if (city.isInfected() && city.isInfectionClicked(mouseX, mouseY)) {
