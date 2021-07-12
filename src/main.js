@@ -7,7 +7,7 @@ var animate =
     };
 
 var backgroundImage = new Image();
-backgroundImage.src = "../images/pandemic.jpg";
+backgroundImage.src = "images/pandemic.jpg";
 var canvas = document.createElement('canvas');
 canvas.id = "canvas";
 canvas.width = WIDTH;
