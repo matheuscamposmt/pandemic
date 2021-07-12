@@ -8,7 +8,7 @@ class City {
         this.height = 20;
         this.neighborCities = [];
 
-        this.infections = [];
+        this.infections = {};
         this.wasOutbreakInThisRound = false;
 
         this.hasResearchCenter = false;
@@ -23,11 +23,24 @@ class City {
         context.font = 10 + "px Arial";
 
         var vOffset = 0;
-        for (var i = 0; i < this.infections.length; i++) {
-            var infection = this.infections[i];
-            context.fillStyle = infection;
-            context.fillRect(this.x + hOffset, this.y + vOffset, this.width, this.height);
-            vOffset += this.height;
+        for (var [infection, occurrences] of Object.entries(this.infections)) {
+            for (var i = 0; i < occurrences; i++) {
+                var colorHex;
+                if (infection === "Blue")
+                    colorHex = BLUE;
+                else if (infection === "Yellow")
+                    colorHex = YELLOW;
+                else if (infection === "Black")
+                    colorHex = BLACK;
+                else if (infection === "Red")
+                    colorHex = RED;
+                else
+                    console.log("Unsupported color: " + color);
+
+                context.fillStyle = colorHex;
+                context.fillRect(this.x + hOffset, this.y + vOffset, this.width, this.height);
+                vOffset += this.height;
+            }
         }
 
         if (this.hasResearchCenter) {
@@ -76,34 +89,21 @@ class City {
         if (cureHandler.hasCure(color))
             return;
 
-        if (this.infections.length < 3) {
+        var numberOfInfectionsByColor = this.infections[color] || 0
+        if (numberOfInfectionsByColor < 3) {
             infectionCubeHandler.decr(color, 1);
-
-            var colorHex;
-
-            if (color === "Blue")
-                colorHex = BLUE;
-            else if (color === "Yellow")
-                colorHex = YELLOW;
-            else if (color === "Black")
-                colorHex = BLACK;
-            else if (color === "Red")
-                colorHex = RED;
-            else
-                console.log("Unsupported color: " + color);
-
-            this.infections.push(colorHex);
+            this.infections[color] = 1 + numberOfInfectionsByColor
         } else {
-            this.outbreak(outbreakMarker, infectionCubeHandler, cureHandler);
+            this.outbreak(color, outbreakMarker, infectionCubeHandler, cureHandler);
         }
     }
-    outbreak(outbreakMarker, infectionCubeHandler, cureHandler) {
+    outbreak(color, outbreakMarker, infectionCubeHandler, cureHandler) {
         this.wasOutbreakInThisRound = true;
         outbreakMarker.incr();
 
         for (var i = 0; i < this.neighborCities.length; i++) {
             var neighborCity = this.neighborCities[i];
-            neighborCity.infect(this.color, outbreakMarker, infectionCubeHandler, cureHandler);
+            neighborCity.infect(color, outbreakMarker, infectionCubeHandler, cureHandler);
         }
     }
     cleanInfectionFlag() {
@@ -116,25 +116,23 @@ class City {
         }
     }
     isInfected() {
-        return 0 < this.infections.length;
+        for (var [_, occurrences] of Object.entries(this.infections)) {
+            if (0 < occurrences) {
+                return true
+            }
+        }
+        return false
     }
     disinfect(infectionCubeHandler, cureHandler, pointX, pointY) {
         if (this.isInfected()) {
-            var infectionIndex = this.getClickedInfection(pointX, pointY);
-            if (infectionIndex == undefined)
-                infectionIndex = this.infections.length - 1;
-            var infection = this.infections.splice(infectionIndex, 1);
-
-            var disinfectionRate = 1;
+            var infection = this.getClickedInfection(pointX, pointY);
             var hasCure = cureHandler.hasCure(infection);
             if (hasCure) {
-                for (var i = this.infections.length - 1; 0 <= i; i--) {
-                    var potentialDisinfection = this.infections[i];
-                    if (potentialDisinfection == infection) {
-                        this.infections.splice(i, 1);
-                        disinfectionRate++;
-                    }
-                }
+                var disinfectionRate = this.infections[infection];
+                this.infections[infection] = 0
+            } else {
+                var disinfectionRate = 1;
+                this.infections[infection] -= 1 // Maybe check consistency 0 <= #infections
             }
             infectionCubeHandler.incr(infection, disinfectionRate);
         }
@@ -143,13 +141,19 @@ class City {
         return this.getClickedInfection(pointX, pointY) != undefined;
     }
     getClickedInfection(pointX, pointY) {
-        var vOffset = 0;
-        for (var i = 0; i < this.infections.length; i++) {
-            var intersects = pointIntersectsWithSquare(pointX, pointY, this.x + this.width, this.y + vOffset, this.width, this.height);
-            if (intersects)
-                return i;
+        if (!this.isInfected()) {
+            return undefined
+        }
 
-            vOffset += this.height;
+        var vOffset = 0;
+        for (var [color, occurrences] of Object.entries(this.infections)) {
+            for (var i = 0; i < occurrences; i++) {
+                var intersects = pointIntersectsWithSquare(pointX, pointY, this.x + this.width, this.y + vOffset, this.width, this.height);
+                if (intersects)
+                    return color;
+
+                vOffset += this.height;
+            }
         }
 
         return undefined;
