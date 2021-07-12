@@ -54,7 +54,7 @@ class Pandemic {
     }
     update(mousePressed, mouseX, mouseY) {
         if (this.hasLost()) {
-            // console.log("You lost!");
+            return;
         }
 
         var currentPlayer = this.players[this.playerTurn];
@@ -100,6 +100,7 @@ class Pandemic {
     }
     nextPlayer() {
         this.playerTurn = (this.playerTurn + 1) % this.players.length;
+        console.log("Player " + (this.playerTurn + 1) + "'s turn")
     }
     hasLost() {
         return this.infectionCubeHandler.hasLost()

@@ -8,6 +8,7 @@ class InfectionDeck {
             throw "Cannot get card from empty deck";
         }
         var card = this.deck.pop();
+        console.log("Infecting " + card.name)
         return card;
     }
     shuffle(deck) {

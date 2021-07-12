@@ -163,9 +163,6 @@ class City {
     }
 }
 
-
-
-
 var pointIntersectsWithSquare = function (pointX, pointY, squareX, squareY, squareWidth, squareHeight) {
     return squareX <= pointX && pointX <= squareX + squareWidth
         && squareY <= pointY && pointY <= squareY + squareHeight;
