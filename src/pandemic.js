@@ -1,114 +1,114 @@
 class Pandemic {
     constructor(numberOfPlayers, difficulty) {
-        var map = new StandardMap();
-        this.cities = map.setupCities();
-        var Atlanta = this.cities[0];
-        this.players = [];
+        var map = new StandardMap()
+        this.cities = map.setupCities()
+        var Atlanta = this.cities[0]
+        this.players = []
         for (var playerNumber = 0; playerNumber < numberOfPlayers; playerNumber++) {
-            var newPlayer = new Player(Atlanta);
-            this.players.push(newPlayer);
+            var newPlayer = new Player(Atlanta)
+            this.players.push(newPlayer)
         }
-        this.numberOfPlayers = numberOfPlayers;
-        this.playerTurn = 0;
+        this.numberOfPlayers = numberOfPlayers
+        this.playerTurn = 0
 
-        this.outbreakMarker = new OutbreakMarker();
-        this.infectionCubeHandler = new InfectionCubeHandler();
-        this.cureHandler = new CureHandler();
-        this.infectionRateHandler = new InfectionRateHandler();
-        this.infectionDeck = new InfectionDeck(this.cities);
-        this.playerDeck = new PlayerDeck(this.cities, 0, undefined);
+        this.outbreakMarker = new OutbreakMarker()
+        this.infectionCubeHandler = new InfectionCubeHandler()
+        this.cureHandler = new CureHandler()
+        this.infectionRateHandler = new InfectionRateHandler()
+        this.infectionDeck = new InfectionDeck(this.cities)
+        this.playerDeck = new PlayerDeck(this.cities, 0, undefined)
 
-        this.numberOfActionsPerTurn = 4;
-        this.numberOfActionsLeft = this.numberOfActionsPerTurn;
+        this.numberOfActionsPerTurn = 4
+        this.numberOfActionsLeft = this.numberOfActionsPerTurn
 
-        this.startGame();
+        this.startGame()
     }
     startGame() {
-        var Atlanta = this.cities[0];
-        Atlanta.makeResearchCenter();
-        this.startGameInfectCities();
+        var Atlanta = this.cities[0]
+        Atlanta.makeResearchCenter()
+        this.startGameInfectCities()
         console.log("==============")
         console.log("Player " + (this.playerTurn + 1) + "'s turn")
     }
     startGameInfectCities() {
-        var numberOfCitiesToInfectPerRound = 3;
-        var numberOfRounds = 3;
+        var numberOfCitiesToInfectPerRound = 3
+        var numberOfRounds = 3
         for (var i = numberOfRounds; 0 < i; i--) {
             for (var j = 0; j < numberOfCitiesToInfectPerRound; j++) {
-                var city = this.infectionDeck.getCard();
-                city.startMultipleInfections(this.outbreakMarker, this.infectionCubeHandler, this.cureHandler, i);
+                var city = this.infectionDeck.getCard()
+                city.startMultipleInfections(this.outbreakMarker, this.infectionCubeHandler, this.cureHandler, i)
             }
         }
     }
     render() {
-        context.drawImage(backgroundImage, 0, 0, WIDTH, HEIGHT);
-        this.outbreakMarker.render();
-        this.infectionCubeHandler.render();
-        this.cureHandler.render();
-        this.infectionRateHandler.render();
+        context.drawImage(backgroundImage, 0, 0, WIDTH, HEIGHT)
+        this.outbreakMarker.render()
+        this.infectionCubeHandler.render()
+        this.cureHandler.render()
+        this.infectionRateHandler.render()
 
         for (var i = 0; i < this.players.length; i++) {
-            this.players[i].render();
+            this.players[i].render()
         }
 
         for (var i = 0; i < this.cities.length; i++) {
-            this.cities[i].render();
+            this.cities[i].render()
         }
     }
     update(mousePressed, mouseX, mouseY) {
         if (this.hasLost()) {
-            return;
+            return
         }
 
-        var currentPlayer = this.players[this.playerTurn];
+        var currentPlayer = this.players[this.playerTurn]
         if (mousePressed) {
             for (var i = 0; i < this.cities.length; i++) {
-                var city = this.cities[i];
-                var isClicked = city.isClicked(mouseX, mouseY);
+                var city = this.cities[i]
+                var isClicked = city.isClicked(mouseX, mouseY)
                 if (isClicked) {
-                    this.handleAction(currentPlayer, city, mouseX, mouseY);
+                    this.handleAction(currentPlayer, city, mouseX, mouseY)
                 }
             }
         }
 
         if (this.numberOfActionsLeft == 0) {
             for (var infectionNumber = 0; infectionNumber < this.infectionRateHandler.getInfectionRate(); infectionNumber++) {
-                var city = this.infectionDeck.getCard();
-                city.startInfection(this.outbreakMarker, this.infectionCubeHandler, this.cureHandler);
+                var city = this.infectionDeck.getCard()
+                city.startInfection(this.outbreakMarker, this.infectionCubeHandler, this.cureHandler)
             }
             this.playerDeck.getCard()
             this.playerDeck.getCard()
-            this.numberOfActionsLeft = this.numberOfActionsPerTurn;
-            this.nextPlayer();
+            this.numberOfActionsLeft = this.numberOfActionsPerTurn
+            this.nextPlayer()
             console.log("==============")
             console.log("Player " + (this.playerTurn + 1) + "'s turn")
         }
     }
     handleAction(currentPlayer, city, mouseX, mouseY) {
         if (city.neighborCities.includes(currentPlayer.city)) {
-            currentPlayer.update(city);
+            currentPlayer.update(city)
         } else if (city === currentPlayer.city) {
             if (city.isInfected() && city.isInfectionClicked(mouseX, mouseY)) {
-                city.disinfect(this.infectionCubeHandler, this.cureHandler, mouseX, mouseY);
+                city.disinfect(this.infectionCubeHandler, this.cureHandler, mouseX, mouseY)
             } else if (city.isCityClicked(mouseX, mouseY) && !city.hasResearchCenter) {
-                city.makeResearchCenter();
+                city.makeResearchCenter()
             } else if (city.isResearchCenterClicked(mouseX, mouseY)) {
-                this.cureHandler.makeCure("Blue");
+                this.cureHandler.makeCure("Blue")
             } else {
-                console.log("Nothing");
-                return;
+                console.log("Nothing")
+                return
             }
         } else {
-            console.log("Nothing");
-            return;
+            console.log("Nothing")
+            return
         }
-        this.numberOfActionsLeft--;
+        this.numberOfActionsLeft--
     }
     nextPlayer() {
-        this.playerTurn = (this.playerTurn + 1) % this.players.length;
+        this.playerTurn = (this.playerTurn + 1) % this.players.length
     }
     hasLost() {
         return this.infectionCubeHandler.hasLost()
-            || this.outbreakMarker.hasLost();
+            || this.outbreakMarker.hasLost()
     }
 }
