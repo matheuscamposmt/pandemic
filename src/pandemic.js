@@ -26,6 +26,19 @@ class Pandemic {
             }
         }
 
+        switch (difficulty) {
+            case "Easy":
+                var numberOfEpidemicCards = 4
+                break
+            case "Medium":
+                var numberOfEpidemicCards = 5
+                break
+            case "Hard":
+                var numberOfEpidemicCards = 6
+                break
+        }
+        this.playerDeck.addEpidemicCards(numberOfEpidemicCards)
+
         this.numberOfActionsPerTurn = 4
         this.numberOfActionsLeft = this.numberOfActionsPerTurn
 

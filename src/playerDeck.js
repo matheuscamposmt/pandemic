@@ -20,4 +20,20 @@ class PlayerDeck {
             deck[randomIndex] = x
         }
     }
+    addEpidemicCards(numberOfEpidemicCards) {
+        this.shuffle(this.deck)
+        const numberOfCardsForEpidemic = this.deck.length / numberOfEpidemicCards
+        var numberOfCards = 0
+        const newDeck = []
+        while (numberOfCards < this.deck.length) {
+            const intermediateDeck = this.deck.slice(numberOfCards, numberOfCards + numberOfCardsForEpidemic)
+            intermediateDeck.push(new EpidemicCard())
+            this.shuffle(intermediateDeck)
+            Array.prototype.push.apply(newDeck, intermediateDeck);
+
+            numberOfCards += numberOfCardsForEpidemic
+            console.log(numberOfCards)
+        }
+        this.deck = newDeck
+    }
 }
