@@ -16,6 +16,7 @@ class Pandemic {
         this.cureHandler = new CureHandler();
         this.infectionRateHandler = new InfectionRateHandler();
         this.infectionDeck = new InfectionDeck(this.cities);
+        this.playerDeck = new PlayerDeck(this.cities, 0, undefined);
 
         this.numberOfActionsPerTurn = 4;
         this.numberOfActionsLeft = this.numberOfActionsPerTurn;
@@ -26,6 +27,8 @@ class Pandemic {
         var Atlanta = this.cities[0];
         Atlanta.makeResearchCenter();
         this.startGameInfectCities();
+        console.log("==============")
+        console.log("Player " + (this.playerTurn + 1) + "'s turn")
     }
     startGameInfectCities() {
         var numberOfCitiesToInfectPerRound = 3;
@@ -73,9 +76,12 @@ class Pandemic {
                 var city = this.infectionDeck.getCard();
                 city.startInfection(this.outbreakMarker, this.infectionCubeHandler, this.cureHandler);
             }
-            // TODO: Draw 2 player cards
+            this.playerDeck.getCard()
+            this.playerDeck.getCard()
             this.numberOfActionsLeft = this.numberOfActionsPerTurn;
             this.nextPlayer();
+            console.log("==============")
+            console.log("Player " + (this.playerTurn + 1) + "'s turn")
         }
     }
     handleAction(currentPlayer, city, mouseX, mouseY) {
@@ -100,7 +106,6 @@ class Pandemic {
     }
     nextPlayer() {
         this.playerTurn = (this.playerTurn + 1) % this.players.length;
-        console.log("Player " + (this.playerTurn + 1) + "'s turn")
     }
     hasLost() {
         return this.infectionCubeHandler.hasLost()
