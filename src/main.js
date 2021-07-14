@@ -81,7 +81,7 @@ var getMousePos = function (canvas, evt) {
 }
 
 var settingsUpdate = function () {
-    SCALE = document.getElementById('scale').value;
+    SCALE = 1 // document.getElementById('scale').value;
     WIDTH = SCALE * 1200;
     HEIGHT = SCALE * 849;
     canvas.width = WIDTH;
