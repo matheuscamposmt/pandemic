@@ -36,6 +36,9 @@ class Pandemic {
             case "Hard":
                 var numberOfEpidemicCards = 6
                 break
+            default:
+                console.log("Invalid difficulty!")
+                break
         }
         this.playerDeck.addEpidemicCards(numberOfEpidemicCards)
 

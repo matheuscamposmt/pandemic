@@ -30,9 +30,7 @@ class PlayerDeck {
             intermediateDeck.push(new EpidemicCard())
             this.shuffle(intermediateDeck)
             Array.prototype.push.apply(newDeck, intermediateDeck);
-
             numberOfCards += numberOfCardsForEpidemic
-            console.log(numberOfCards)
         }
         this.deck = newDeck
     }
