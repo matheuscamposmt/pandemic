@@ -1,5 +1,5 @@
 class PlayerDeck {
-    constructor(cities, numberOfEpidemyCards, actionCards) {
+    constructor(cities, actionCards) {
         this.deck = cities.slice() // NB. this keeps the pointers of the underlying objects
         this.shuffle(this.deck)
     }

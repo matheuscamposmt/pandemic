@@ -16,7 +16,15 @@ class Pandemic {
         this.cureHandler = new CureHandler()
         this.infectionRateHandler = new InfectionRateHandler()
         this.infectionDeck = new InfectionDeck(this.cities)
-        this.playerDeck = new PlayerDeck(this.cities, 0, undefined)
+        this.playerDeck = new PlayerDeck(this.cities, undefined)
+
+        var numberOfCardsToDraw = 6 - this.players.length
+        for (var player of this.players) {
+            for (var cardNumber = 0; cardNumber < numberOfCardsToDraw; cardNumber++) {
+                var card = this.playerDeck.getCard()
+                // TODO: Add card to player
+            }
+        }
 
         this.numberOfActionsPerTurn = 4
         this.numberOfActionsLeft = this.numberOfActionsPerTurn
