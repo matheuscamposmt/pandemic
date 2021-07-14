@@ -134,5 +134,6 @@ class Pandemic {
     hasLost() {
         return this.infectionCubeHandler.hasLost()
             || this.outbreakMarker.hasLost()
+            || this.playerDeck.length <= 0
     }
 }
