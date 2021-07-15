@@ -13,6 +13,15 @@ class InfectionDeck {
         console.log("Infecting " + card.name)
         return card
     }
+    getBottomCard() {
+        if (this.deck.length <= 0) {
+            throw "Cannot get card from empty deck"
+        }
+        var card = this.deck.shift()
+        this.discardPile.push(card)
+        console.log("Infecting " + card.name)
+        return card
+    }
     mixInDiscardPile() {
         this.shuffle(this.discardPile)
         Array.prototype.push.apply(this.deck, this.discardPile);

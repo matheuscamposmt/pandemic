@@ -106,6 +106,8 @@ class Pandemic {
                 const playerCard = this.playerDeck.getCard()
                 if (playerCard instanceof EpidemicCard) {
                     this.infectionRateHandler.incr()
+                    const city = this.infectionDeck.getBottomCard()
+                    city.startMultipleInfections(this.outbreakMarker, this.infectionCubeHandler, this.cureHandler, 3)
                     this.infectionDeck.mixInDiscardPile()
                 }
             }
