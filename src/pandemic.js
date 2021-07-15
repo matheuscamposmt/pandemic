@@ -10,6 +10,7 @@ class Pandemic {
         }
         this.numberOfPlayers = numberOfPlayers
         this.playerTurn = 0
+        this.numberOfPlayerCardsPerTurn = 2
 
         this.outbreakMarker = new OutbreakMarker()
         this.infectionCubeHandler = new InfectionCubeHandler()
@@ -100,8 +101,13 @@ class Pandemic {
                 var city = this.infectionDeck.getCard()
                 city.startInfection(this.outbreakMarker, this.infectionCubeHandler, this.cureHandler)
             }
-            this.playerDeck.getCard()
-            this.playerDeck.getCard()
+
+            for (var playerCardNumber = 0; playerCardNumber < this.numberOfPlayerCardsPerTurn; playerCardNumber++) {
+                const playerCard = this.playerDeck.getCard()
+                if (playerCard instanceof EpidemicCard) {
+                    this.infectionRateHandler.incr()
+                }
+            }
             this.numberOfActionsLeft = this.numberOfActionsPerTurn
             this.nextPlayer()
             console.log("==============")
