@@ -106,6 +106,7 @@ class Pandemic {
                 const playerCard = this.playerDeck.getCard()
                 if (playerCard instanceof EpidemicCard) {
                     this.infectionRateHandler.incr()
+                    this.infectionDeck.mixInDiscardPile()
                 }
             }
             this.numberOfActionsLeft = this.numberOfActionsPerTurn
