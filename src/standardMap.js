@@ -1,116 +1,116 @@
 class StandardMap {
     setupCities() {
         // Blue
-        var Atlanta = new City("Atlanta", 227, 316, "Blue")
-        var Chicago = new City("Chicago", 197, 255, "Blue")
-        var Montreal = new City("Montreal", 279, 252, "Blue")
-        var NewYork = new City("New York", 343, 262, "Blue")
-        var Washington = new City("Washington", 315, 312, "Blue")
-        var SanFrancisco = new City("San Francisco", 91, 285, "Blue")
-        var London = new City("London", 496, 212, "Blue")
-        var Madrid = new City("Madrid", 484, 293, "Blue")
-        var Essen = new City("Essen", 579, 197, "Blue")
-        var Paris = new City("Paris", 559, 253, "Blue")
-        var Milan = new City("Milan", 613, 236, "Blue")
-        var StPetersburg = new City("St. Petersburg", 670, 181, "Blue")
+        var Atlanta = new City("Atlanta", "Blue", 227, 316)
+        var Chicago = new City("Chicago", "Blue", 197, 255)
+        var Montreal = new City("Montreal", "Blue", 279, 252)
+        var NewYork = new City("New York", "Blue", 343, 262)
+        var Washington = new City("Washington", "Blue", 315, 312)
+        var SanFrancisco = new City("San Francisco", "Blue", 91, 285)
+        var London = new City("London", "Blue", 496, 212)
+        var Madrid = new City("Madrid", "Blue", 484, 293)
+        var Essen = new City("Essen", "Blue", 579, 197)
+        var Paris = new City("Paris", "Blue", 559, 253)
+        var Milan = new City("Milan", "Blue", 613, 236)
+        var StPetersburg = new City("St. Petersburg", "Blue", 670, 181)
 
         // Yellow
-        var LosAngeles = new City("Los Angeles", 109, 369, "Yellow")
-        var MexicoCity = new City("Mexico City", 186, 396, "Yellow")
-        var Miami = new City("Miami", 280, 383, "Yellow")
-        var Bogota = new City("Bogota", 273, 467, "Yellow")
-        var Lima = new City("Lima", 243, 556, "Yellow")
-        var Santiago = new City("Santiago", 254, 649, "Yellow")
-        var BuenosAires = new City("Buenos Aires", 343, 632, "Yellow")
-        var SaoPaulo = new City("Sao Paulo", 389, 570, "Yellow")
-        var Lagos = new City("Lagos", 551, 453, "Yellow")
-        var Kinshasa = new City("Kinshasa", 602, 511, "Yellow")
-        var Khartoum = new City("Khartoum", 655, 437, "Yellow")
-        var Johannesburg = new City("Johannesburg", 650, 593, "Yellow")
+        var LosAngeles = new City("Los Angeles", "Yellow", 109, 369)
+        var MexicoCity = new City("Mexico City", "Yellow", 186, 396)
+        var Miami = new City("Miami", "Yellow", 280, 383)
+        var Bogota = new City("Bogota", "Yellow", 273, 467)
+        var Lima = new City("Lima", "Yellow", 243, 556)
+        var Santiago = new City("Santiago", "Yellow", 254, 649)
+        var BuenosAires = new City("Buenos Aires", "Yellow", 343, 632)
+        var SaoPaulo = new City("Sao Paulo", "Yellow", 389, 570)
+        var Lagos = new City("Lagos", "Yellow", 551, 453)
+        var Kinshasa = new City("Kinshasa", "Yellow", 602, 511)
+        var Khartoum = new City("Khartoum", "Yellow", 655, 437)
+        var Johannesburg = new City("Johannesburg", "Yellow", 650, 593)
 
         // Black
-        var Moscow = new City("Moscow", 715, 235, "Black")
-        var Istanbul = new City("Istanbul", 649, 283, "Black")
-        var Algiers = new City("Algiers", 575, 337, "Black")
-        var Cairo = new City("Cairo", 640, 356, "Black")
-        var Baghdad = new City("Baghdad", 711, 329, "Black")
-        var Tehran = new City("Tehran", 773, 272, "Black")
-        var Riyadh = new City("Riyadh", 719, 400, "Black")
-        var Karachi = new City("Karachi", 788, 354, "Black")
-        var Delhi = new City("Delhi", 851, 332, "Black")
-        var Mumbai = new City("Mumbai", 797, 417, "Black")
-        var Chennai = new City("Chennai", 860, 457, "Black")
-        var Kolkata = new City("Kolkata", 908, 350, "Black")
+        var Moscow = new City("Moscow", "Black", 715, 235)
+        var Istanbul = new City("Istanbul", "Black", 649, 283)
+        var Algiers = new City("Algiers", "Black", 575, 337)
+        var Cairo = new City("Cairo", "Black", 640, 356)
+        var Baghdad = new City("Baghdad", "Black", 711, 329)
+        var Tehran = new City("Tehran", "Black", 773, 272)
+        var Riyadh = new City("Riyadh", "Black", 719, 400)
+        var Karachi = new City("Karachi", "Black", 788, 354)
+        var Delhi = new City("Delhi", "Black", 851, 332)
+        var Mumbai = new City("Mumbai", "Black", 797, 417)
+        var Chennai = new City("Chennai", "Black", 860, 457)
+        var Kolkata = new City("Kolkata", "Black", 908, 350)
 
         // Red
-        var Beijing = new City("Beijing", 955, 258, "Red")
-        var Seoul = new City("Seoul", 1028, 253, "Red")
-        var Shanghai = new City("Shanghai", 960, 315, "Red")
-        var Tokyo = new City("Tokyo", 1086, 286, "Red")
-        var Bangkok = new City("Bangkok", 918, 423, "Red")
-        var HongKong = new City("Hong Kong", 966, 386, "Red")
-        var Taipei = new City("Taipei", 1032, 373, "Red")
-        var Osaka = new City("Osaka", 1092, 349, "Red")
-        var Jakarta = new City("Jakarta", 919, 534, "Red")
-        var HoChiMinhCity = new City("Ho Chi Minh City", 970, 481, "Red")
-        var Manila = new City("Manila", 1052, 476, "Red")
-        var Sydney = new City("Sydney", 1100, 646, "Red")
+        var Beijing = new City("Beijing", "Red", 955, 258)
+        var Seoul = new City("Seoul", "Red", 1028, 253)
+        var Shanghai = new City("Shanghai", "Red", 960, 315)
+        var Tokyo = new City("Tokyo", "Red", 1086, 286)
+        var Bangkok = new City("Bangkok", "Red", 918, 423)
+        var HongKong = new City("Hong Kong", "Red", 966, 386)
+        var Taipei = new City("Taipei", "Red", 1032, 373)
+        var Osaka = new City("Osaka", "Red", 1092, 349)
+        var Jakarta = new City("Jakarta", "Red", 919, 534)
+        var HoChiMinhCity = new City("Ho Chi Minh City", "Red", 970, 481)
+        var Manila = new City("Manila", "Red", 1052, 476)
+        var Sydney = new City("Sydney", "Red", 1100, 646)
 
-        // Blue
-        Atlanta.setNeighborCities([Chicago, Washington, Miami])
-        Chicago.setNeighborCities([Atlanta, SanFrancisco, Montreal, LosAngeles, MexicoCity])
-        Montreal.setNeighborCities([Chicago, Washington, NewYork])
-        NewYork.setNeighborCities([Montreal, Washington, London, Madrid])
-        Washington.setNeighborCities([Atlanta, Montreal, NewYork, Miami])
-        SanFrancisco.setNeighborCities([Chicago, LosAngeles, Tokyo, Manila])
-        London.setNeighborCities([NewYork, Madrid, Paris, Essen])
-        Madrid.setNeighborCities([NewYork, London, Paris, SaoPaulo, Algiers])
-        Essen.setNeighborCities([London, Paris, Milan, StPetersburg])
-        Paris.setNeighborCities([London, Essen, Milan, Madrid, Algiers])
-        Milan.setNeighborCities([Essen, Paris, Istanbul])
-        StPetersburg.setNeighborCities([Essen, Moscow, Istanbul])
+        // Blue connections using addNeighbor method
+        Atlanta.addNeighbor(Chicago); Atlanta.addNeighbor(Washington); Atlanta.addNeighbor(Miami);
+        Chicago.addNeighbor(Atlanta); Chicago.addNeighbor(SanFrancisco); Chicago.addNeighbor(Montreal); Chicago.addNeighbor(LosAngeles); Chicago.addNeighbor(MexicoCity);
+        Montreal.addNeighbor(Chicago); Montreal.addNeighbor(Washington); Montreal.addNeighbor(NewYork);
+        NewYork.addNeighbor(Montreal); NewYork.addNeighbor(Washington); NewYork.addNeighbor(London); NewYork.addNeighbor(Madrid);
+        Washington.addNeighbor(Atlanta); Washington.addNeighbor(Montreal); Washington.addNeighbor(NewYork); Washington.addNeighbor(Miami);
+        SanFrancisco.addNeighbor(Chicago); SanFrancisco.addNeighbor(LosAngeles); SanFrancisco.addNeighbor(Tokyo); SanFrancisco.addNeighbor(Manila);
+        London.addNeighbor(NewYork); London.addNeighbor(Madrid); London.addNeighbor(Paris); London.addNeighbor(Essen);
+        Madrid.addNeighbor(NewYork); Madrid.addNeighbor(London); Madrid.addNeighbor(Paris); Madrid.addNeighbor(SaoPaulo); Madrid.addNeighbor(Algiers);
+        Essen.addNeighbor(London); Essen.addNeighbor(Paris); Essen.addNeighbor(Milan); Essen.addNeighbor(StPetersburg);
+        Paris.addNeighbor(London); Paris.addNeighbor(Essen); Paris.addNeighbor(Milan); Paris.addNeighbor(Madrid); Paris.addNeighbor(Algiers);
+        Milan.addNeighbor(Essen); Milan.addNeighbor(Paris); Milan.addNeighbor(Istanbul);
+        StPetersburg.addNeighbor(Essen); StPetersburg.addNeighbor(Moscow); StPetersburg.addNeighbor(Istanbul);
 
-        // Yellow
-        LosAngeles.setNeighborCities([SanFrancisco, Chicago, MexicoCity, Sydney])
-        MexicoCity.setNeighborCities([Chicago, LosAngeles, Miami, Lima, Bogota])
-        Miami.setNeighborCities([Atlanta, Washington, MexicoCity, Bogota])
-        Bogota.setNeighborCities([MexicoCity, Miami, Lima, BuenosAires, SaoPaulo])
-        Lima.setNeighborCities([MexicoCity, Bogota, Santiago])
-        Santiago.setNeighborCities([Lima])
-        BuenosAires.setNeighborCities([Bogota, SaoPaulo])
-        SaoPaulo.setNeighborCities([Madrid, Bogota, BuenosAires, Lagos])
-        Lagos.setNeighborCities([SaoPaulo, Kinshasa, Khartoum])
-        Kinshasa.setNeighborCities([Lagos, Khartoum, Johannesburg])
-        Khartoum.setNeighborCities([Lagos, Kinshasa, Johannesburg, Cairo])
-        Johannesburg.setNeighborCities([Kinshasa, Khartoum])
+        // Yellow connections
+        LosAngeles.addNeighbor(SanFrancisco); LosAngeles.addNeighbor(Chicago); LosAngeles.addNeighbor(MexicoCity); LosAngeles.addNeighbor(Sydney);
+        MexicoCity.addNeighbor(Chicago); MexicoCity.addNeighbor(LosAngeles); MexicoCity.addNeighbor(Miami); MexicoCity.addNeighbor(Lima); MexicoCity.addNeighbor(Bogota);
+        Miami.addNeighbor(Atlanta); Miami.addNeighbor(Washington); Miami.addNeighbor(MexicoCity); Miami.addNeighbor(Bogota);
+        Bogota.addNeighbor(MexicoCity); Bogota.addNeighbor(Miami); Bogota.addNeighbor(Lima); Bogota.addNeighbor(BuenosAires); Bogota.addNeighbor(SaoPaulo);
+        Lima.addNeighbor(MexicoCity); Lima.addNeighbor(Bogota); Lima.addNeighbor(Santiago);
+        Santiago.addNeighbor(Lima);
+        BuenosAires.addNeighbor(Bogota); BuenosAires.addNeighbor(SaoPaulo);
+        SaoPaulo.addNeighbor(Madrid); SaoPaulo.addNeighbor(Bogota); SaoPaulo.addNeighbor(BuenosAires); SaoPaulo.addNeighbor(Lagos);
+        Lagos.addNeighbor(SaoPaulo); Lagos.addNeighbor(Kinshasa); Lagos.addNeighbor(Khartoum);
+        Kinshasa.addNeighbor(Lagos); Kinshasa.addNeighbor(Khartoum); Kinshasa.addNeighbor(Johannesburg);
+        Khartoum.addNeighbor(Lagos); Khartoum.addNeighbor(Kinshasa); Khartoum.addNeighbor(Johannesburg); Khartoum.addNeighbor(Cairo);
+        Johannesburg.addNeighbor(Kinshasa); Johannesburg.addNeighbor(Khartoum);
 
-        // Black
-        Moscow.setNeighborCities([StPetersburg, Istanbul, Tehran])
-        Istanbul.setNeighborCities([Milan, StPetersburg, Moscow, Algiers, Cairo, Baghdad])
-        Algiers.setNeighborCities([Madrid, Paris, Istanbul, Cairo])
-        Cairo.setNeighborCities([Khartoum, Istanbul, Algiers, Baghdad, Riyadh])
-        Baghdad.setNeighborCities([Istanbul, Cairo, Riyadh, Tehran, Karachi])
-        Tehran.setNeighborCities([Moscow, Baghdad, Karachi, Delhi])
-        Riyadh.setNeighborCities([Cairo, Baghdad, Karachi])
-        Karachi.setNeighborCities([Baghdad, Riyadh, Tehran, Delhi, Mumbai])
-        Delhi.setNeighborCities([Tehran, Karachi, Mumbai, Kolkata, Chennai])
-        Mumbai.setNeighborCities([Karachi, Delhi, Chennai])
-        Chennai.setNeighborCities([Mumbai, Delhi, Kolkata, Bangkok, Jakarta])
-        Kolkata.setNeighborCities([Delhi, Chennai, Bangkok, HongKong])
+        // Black connections
+        Moscow.addNeighbor(StPetersburg); Moscow.addNeighbor(Istanbul); Moscow.addNeighbor(Tehran);
+        Istanbul.addNeighbor(Milan); Istanbul.addNeighbor(StPetersburg); Istanbul.addNeighbor(Moscow); Istanbul.addNeighbor(Algiers); Istanbul.addNeighbor(Cairo); Istanbul.addNeighbor(Baghdad);
+        Algiers.addNeighbor(Madrid); Algiers.addNeighbor(Paris); Algiers.addNeighbor(Istanbul); Algiers.addNeighbor(Cairo);
+        Cairo.addNeighbor(Khartoum); Cairo.addNeighbor(Istanbul); Cairo.addNeighbor(Algiers); Cairo.addNeighbor(Baghdad); Cairo.addNeighbor(Riyadh);
+        Baghdad.addNeighbor(Istanbul); Baghdad.addNeighbor(Cairo); Baghdad.addNeighbor(Riyadh); Baghdad.addNeighbor(Tehran); Baghdad.addNeighbor(Karachi);
+        Tehran.addNeighbor(Moscow); Tehran.addNeighbor(Baghdad); Tehran.addNeighbor(Karachi); Tehran.addNeighbor(Delhi);
+        Riyadh.addNeighbor(Cairo); Riyadh.addNeighbor(Baghdad); Riyadh.addNeighbor(Karachi);
+        Karachi.addNeighbor(Baghdad); Karachi.addNeighbor(Riyadh); Karachi.addNeighbor(Tehran); Karachi.addNeighbor(Delhi); Karachi.addNeighbor(Mumbai);
+        Delhi.addNeighbor(Tehran); Delhi.addNeighbor(Karachi); Delhi.addNeighbor(Mumbai); Delhi.addNeighbor(Kolkata); Delhi.addNeighbor(Chennai);
+        Mumbai.addNeighbor(Karachi); Mumbai.addNeighbor(Delhi); Mumbai.addNeighbor(Chennai);
+        Chennai.addNeighbor(Mumbai); Chennai.addNeighbor(Delhi); Chennai.addNeighbor(Kolkata); Chennai.addNeighbor(Bangkok); Chennai.addNeighbor(Jakarta);
+        Kolkata.addNeighbor(Delhi); Kolkata.addNeighbor(Chennai); Kolkata.addNeighbor(Bangkok); Kolkata.addNeighbor(HongKong);
 
-        // Red
-        Beijing.setNeighborCities([Seoul, Shanghai])
-        Seoul.setNeighborCities([Beijing, Shanghai, Tokyo])
-        Shanghai.setNeighborCities([Beijing, Seoul, Tokyo, HongKong, Taipei])
-        Tokyo.setNeighborCities([SanFrancisco, Seoul, Shanghai, Osaka])
-        Bangkok.setNeighborCities([Kolkata, Chennai, HongKong, Jakarta, HoChiMinhCity])
-        HongKong.setNeighborCities([Kolkata, Shanghai, Bangkok, Taipei, Manila, HoChiMinhCity])
-        Taipei.setNeighborCities([Shanghai, HongKong, Osaka, Manila])
-        Osaka.setNeighborCities([Tokyo, Taipei])
-        Jakarta.setNeighborCities([Chennai, Bangkok, HoChiMinhCity, Sydney])
-        HoChiMinhCity.setNeighborCities([Bangkok, HongKong, Jakarta, Manila])
-        Manila.setNeighborCities([SanFrancisco, HongKong, Taipei, HoChiMinhCity, Sydney])
-        Sydney.setNeighborCities([LosAngeles, Jakarta, Manila])
+        // Red connections
+        Beijing.addNeighbor(Seoul); Beijing.addNeighbor(Shanghai);
+        Seoul.addNeighbor(Beijing); Seoul.addNeighbor(Shanghai); Seoul.addNeighbor(Tokyo);
+        Shanghai.addNeighbor(Beijing); Shanghai.addNeighbor(Seoul); Shanghai.addNeighbor(Tokyo); Shanghai.addNeighbor(HongKong); Shanghai.addNeighbor(Taipei);
+        Tokyo.addNeighbor(SanFrancisco); Tokyo.addNeighbor(Seoul); Tokyo.addNeighbor(Shanghai); Tokyo.addNeighbor(Osaka);
+        Bangkok.addNeighbor(Kolkata); Bangkok.addNeighbor(Chennai); Bangkok.addNeighbor(HongKong); Bangkok.addNeighbor(Jakarta); Bangkok.addNeighbor(HoChiMinhCity);
+        HongKong.addNeighbor(Kolkata); HongKong.addNeighbor(Shanghai); HongKong.addNeighbor(Bangkok); HongKong.addNeighbor(Taipei); HongKong.addNeighbor(Manila); HongKong.addNeighbor(HoChiMinhCity);
+        Taipei.addNeighbor(Shanghai); Taipei.addNeighbor(HongKong); Taipei.addNeighbor(Osaka); Taipei.addNeighbor(Manila);
+        Osaka.addNeighbor(Tokyo); Osaka.addNeighbor(Taipei);
+        Jakarta.addNeighbor(Chennai); Jakarta.addNeighbor(Bangkok); Jakarta.addNeighbor(HoChiMinhCity); Jakarta.addNeighbor(Sydney);
+        HoChiMinhCity.addNeighbor(Bangkok); HoChiMinhCity.addNeighbor(HongKong); HoChiMinhCity.addNeighbor(Jakarta); HoChiMinhCity.addNeighbor(Manila);
+        Manila.addNeighbor(SanFrancisco); Manila.addNeighbor(HongKong); Manila.addNeighbor(Taipei); Manila.addNeighbor(HoChiMinhCity); Manila.addNeighbor(Sydney);
+        Sydney.addNeighbor(LosAngeles); Sydney.addNeighbor(Jakarta); Sydney.addNeighbor(Manila);
 
         return [
             // Blue
@@ -123,4 +123,10 @@ class StandardMap {
             Beijing, Seoul, Shanghai, Tokyo, Bangkok, HongKong, Taipei, Osaka, Jakarta, HoChiMinhCity, Manila, Sydney
         ]
     }
+}
+
+// Global function to create standard map
+function createStandardMap() {
+    const mapInstance = new StandardMap();
+    return mapInstance.setupCities();
 }

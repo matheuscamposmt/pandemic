@@ -1,0 +1,391 @@
+// PADRAO STATE
+class GameState {
+    constructor(numberOfPlayers, difficulty) {
+        // Basic game state
+        this.numberOfPlayers = numberOfPlayers;
+        this.difficulty = difficulty;
+        this.currentPlayerIndex = 0;
+        this.actionsRemaining = 4;
+        this.currentPhase = new TurnPhase();
+        this.gameOver = false;
+        this.gameWon = false;
+        
+        this.board = new Board();
+        this.playerDeck = null;
+        this.infectionDeck = null;
+        
+        this.players = [];
+        this.initializePlayers();
+        
+        this.outbreakCount = 0;
+        this.maxOutbreaks = 8;
+        
+        this.infectionCubes = new Map([
+            ['Blue', 24],
+            ['Yellow', 24], 
+            ['Black', 24],
+            ['Red', 24]
+        ]);
+        
+        this.infectionRates = [2, 2, 2, 3, 3, 4, 4]; // Taxa de infecção padrão
+        this.infectionRateIndex = 0;
+        this.infectionRate = this.infectionRates[this.infectionRateIndex];
+        
+        this.curedDiseases = new Set();
+        this.eradicatedDiseases = new Set();
+        
+        this.researchStationCount = 1; // Atlanta começa com uma
+        
+        // Track infection results for UI display
+        this.lastInfectionResults = [];
+    }
+    
+    initializePlayers() {
+        const roles = [Scientist, Medic, Researcher, Dispatcher, OperationsExpert, QuarantineSpecialist, ContingencyPlanner];
+        
+        for (let i = 0; i < this.numberOfPlayers; i++) {
+            const roleClass = roles[i % roles.length];
+            const role = new roleClass();
+            const player = new Player(`Player ${i + 1}`, null, role);
+            this.players.push(player);
+        }
+    }
+    
+    setupInitialState() {
+        this.board.setupBoard(this);
+        this.playerDeck = this.board.playerDeck;
+        this.infectionDeck = this.board.infectionDeck;
+        
+        // Todos os jogadores começam em Atlanta
+        const atlanta = this.board.findCityByName("Atlanta");
+        this.players.forEach(player => {
+            player.location = atlanta;
+        });
+        
+        // Distribui as cartas iniciais com base no número de jogadores
+        const cardsPerPlayer = this.getInitialCardCount();
+        this.dealInitialCards(cardsPerPlayer);
+    }
+    
+    getInitialCardCount() {
+        switch(this.numberOfPlayers) {
+            case 2: return 4;
+            case 3: return 3; 
+            case 4: return 2;
+            default: return 2;
+        }
+    }
+    
+    dealInitialCards(cardsPerPlayer) {
+        for (let player of this.players) {
+            for (let i = 0; i < cardsPerPlayer; i++) {
+                const card = this.playerDeck.draw();
+                if (card && !(card instanceof EpidemicCard)) {
+                    player.addCard(card);
+                }
+            }
+        }
+    }
+    
+    startGame() {
+        this.currentPhase = new TurnPhase();
+        
+        // Reset counters to ensure clean start
+        this.outbreakCount = 0;
+        this.gameOver = false;
+        this.gameWon = false;
+        
+        console.log(`🎮 Game started! ${this.getCurrentPlayer().name}'s turn - Phase: Turn Actions`);
+        console.log(`📊 Initial state: Outbreaks: ${this.outbreakCount}/8, Actions: ${this.actionsRemaining}/4`);
+    }
+    
+    getCurrentPlayer() {
+        return this.players[this.currentPlayerIndex];
+    }
+    
+    getActions() {
+        return this.actionsRemaining;
+    }
+    
+    resetActions() {
+        this.actionsRemaining = 4;
+    }
+    
+    useAction() {
+        if (this.actionsRemaining > 0) {
+            this.actionsRemaining--;
+            return true;
+        }
+        return false;
+    }
+    
+    incrementOutbreaks() {
+        this.outbreakCount++;
+        console.log(`📈 Outbreak count increased: ${this.outbreakCount}/${this.maxOutbreaks}`);
+        
+        if (this.outbreakCount >= this.maxOutbreaks) {
+            this.gameOver = true;
+            console.log(`🚨 GAME OVER: Too many outbreaks! (${this.outbreakCount}/${this.maxOutbreaks})`);
+            return false;
+        }
+        return true;
+    }
+    
+    getOutbreakCount() {
+        return this.outbreakCount;
+    }
+    
+    resetOutbreaks() {
+        this.outbreakCount = 0;
+    }
+    
+    decrementCubes(color, amount = 1) {
+        const current = this.infectionCubes.get(color) || 0;
+        this.infectionCubes.set(color, Math.max(0, current - amount));
+        return this.infectionCubes.get(color);
+    }
+    
+    incrementCubes(color, amount = 1) {
+        const current = this.infectionCubes.get(color) || 0;
+        this.infectionCubes.set(color, current + amount);
+        return this.infectionCubes.get(color);
+    }
+    
+    getCubeCount(color) {
+        return this.infectionCubes.get(color) || 0;
+    }
+    
+    hasCubesAvailable(color, amount = 1) {
+        return this.getCubeCount(color) >= amount;
+    }
+    
+    isCubeColorEmpty(color) {
+        return this.getCubeCount(color) === 0;
+    }
+    
+    getAllCubeCounts() {
+        return new Map(this.infectionCubes);
+    }
+    
+    resetCubes() {
+        this.infectionCubes.set('Blue', 24);
+        this.infectionCubes.set('Yellow', 24);
+        this.infectionCubes.set('Black', 24);
+        this.infectionCubes.set('Red', 24);
+    }
+    
+    getCurrentInfectionRate() {
+        return this.infectionRates[this.infectionRateIndex];
+    }
+    
+    increaseInfectionRate() {
+        if (this.infectionRateIndex < this.infectionRates.length - 1) {
+            this.infectionRateIndex++;
+            this.infectionRate = this.infectionRates[this.infectionRateIndex];
+            return true;
+        }
+        return false; // Cannot increase further
+    }
+    
+    resetInfectionRate() {
+        this.infectionRateIndex = 0;
+        this.infectionRate = this.infectionRates[this.infectionRateIndex];
+    }
+    
+    getInfectionRateIndex() {
+        return this.infectionRateIndex;
+    }
+    
+    // === CURE METHODS (from CureHandler) ===
+    addCure(color) {
+        this.curedDiseases.add(color);
+        console.log(`${color} disease has been cured!`);
+        
+        if (this.checkWinCondition()) {
+            this.gameWon = true;
+            console.log("All diseases cured! You won!");
+        }
+    }
+    
+    hasCure(color) {
+        return this.curedDiseases.has(color);
+    }
+    
+    eradicateDisease(color) {
+        if (this.hasCure(color)) {
+            this.eradicatedDiseases.add(color);
+            console.log(`${color} disease eradicated!`);
+            return true;
+        }
+        return false;
+    }
+    
+    isEradicated(color) {
+        return this.eradicatedDiseases.has(color);
+    }
+    
+    getAllCures() {
+        return Array.from(this.curedDiseases);
+    }
+    
+    getDiseaseCubeCounts() {
+        // Return remaining disease cubes for each color
+        return {
+            'Blue': this.diseaseCubes.Blue || 24,
+            'Yellow': this.diseaseCubes.Yellow || 24,
+            'Black': this.diseaseCubes.Black || 24,
+            'Red': this.diseaseCubes.Red || 24
+        };
+    }
+    
+    getLastInfectionResults() {
+        return this.lastInfectionResults || [];
+    }
+    
+    getAllEradications() {
+        return Array.from(this.eradicatedDiseases);
+    }
+    
+    areAllDiseasesCured() {
+        const diseaseColors = ['Blue', 'Yellow', 'Black', 'Red'];
+        return diseaseColors.every(color => this.hasCure(color));
+    }
+    
+    resetCures() {
+        this.curedDiseases.clear();
+        this.eradicatedDiseases.clear();
+    }
+    
+    // === GAME FLOW METHODS ===
+    drawInfectionCards(n) {
+        console.log(`Drawing ${n} infection cards`);
+        
+        // Clear previous infection results
+        this.lastInfectionResults = [];
+        
+        for (let i = 0; i < n; i++) {
+            const card = this.infectionDeck.draw();
+            if (card && card.city) {
+                const city = this.board.findCityByName(card.city);
+                if (city) {
+                    const previousCount = city.getInfectionCount(city.color);
+                    const previousOutbreakCount = this.outbreakCount;
+                    
+                    const infectionSuccess = this.board.infect(card.city, 1, this);
+                    
+                    const newCount = city.getInfectionCount(city.color);
+                    const cubesAdded = newCount - previousCount;
+                    const outbreakOccurred = this.outbreakCount > previousOutbreakCount || !infectionSuccess;
+                    
+                    console.log(`Infected ${city.name} with ${city.color} disease (${outbreakOccurred ? 'OUTBREAK' : 'normal'})`);
+                    
+                    // Store infection result for UI display
+                    const infectionResult = {
+                        cityName: city.name,
+                        color: city.color,
+                        cubesAdded: Math.max(0, cubesAdded),
+                        totalCubes: newCount,
+                        outbreak: outbreakOccurred
+                    };
+                    
+                    this.lastInfectionResults.push(infectionResult);
+                }
+            }
+        }
+    }
+    
+    drawPlayerCards(n) {
+        const currentPlayer = this.getCurrentPlayer();
+        for (let i = 0; i < n; i++) {
+            const card = this.playerDeck.draw();
+            if (card) {
+                if (card instanceof EpidemicCard) {
+                    this.handleEpidemic();
+                } else {
+                    currentPlayer.addCard(card);
+                }
+            }
+        }
+    }
+    
+    handleEpidemic() {
+        this.increaseInfectionRate();
+        console.log(`Epidemic! Infection rate increased to ${this.getCurrentInfectionRate()}`);
+        
+        // Infect bottom card
+        const bottomCard = this.infectionDeck.drawBottom();
+        if (bottomCard) {
+            this.board.infect(bottomCard.city, 3, this);
+        }
+        
+        // Intensify - reshuffle discard pile on top
+        this.infectionDeck.intensify();
+    }
+    
+    nextPhase() {
+        // Execute phases automatically until we reach a stable state
+        let phasesExecuted = 0;
+        const maxPhases = 10; // Safety limit
+        
+        while (phasesExecuted < maxPhases) {
+            const currentPhaseName = this.currentPhase.constructor.name;
+            const oldPhase = this.currentPhase;
+            
+            // Execute current phase
+            this.currentPhase = this.currentPhase.execute(this);
+            const newPhaseName = this.currentPhase.constructor.name;
+            
+            console.log(`🔄 Phase: ${currentPhaseName} → ${newPhaseName}`);
+            phasesExecuted++;
+            
+            // Stop if phase didn't change (stable state reached)
+            if (oldPhase === this.currentPhase) {
+                console.log(`✅ Stable phase reached: ${currentPhaseName}`);
+                break;
+            }
+            
+            // Stop if we're in TurnPhase and it's a new player's turn
+            if (this.currentPhase.constructor.name === 'TurnPhase' && phasesExecuted > 1) {
+                console.log(`✅ New turn phase reached for ${this.getCurrentPlayer().name}`);
+                break;
+            }
+            
+            // Check for game over conditions
+            if (this.gameOver || this.gameWon) {
+                console.log("🛑 Game ended during phase execution");
+                break;
+            }
+        }
+        
+        if (phasesExecuted >= maxPhases) {
+            console.warn("⚠️ Phase execution stopped due to safety limit");
+        }
+    }
+    
+    nextPlayer() {
+        this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
+        this.resetActions();
+        console.log(`${this.getCurrentPlayer().name}'s turn`);
+    }
+    
+    checkWinCondition() {
+        return this.curedDiseases.size === 4;
+    }
+    
+    checkLoseCondition() {
+        // Check outbreak limit
+        const tooManyOutbreaks = this.outbreakCount >= this.maxOutbreaks;
+        
+        // Check if any disease cubes are exhausted
+        const cubesExhausted = ['Blue', 'Yellow', 'Black', 'Red'].some(color => 
+            this.isCubeColorEmpty(color)
+        );
+        
+        return tooManyOutbreaks || cubesExhausted || this.gameOver;
+    }
+    
+    addEradication(color) {
+        this.eradicatedDiseases.add(color);
+        console.log(`${color} disease has been eradicated!`);
+    }
+} 
