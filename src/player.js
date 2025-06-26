@@ -44,11 +44,11 @@ class Player {
         return false; // Should check GameState.actionsRemaining instead
     }
     
-    moveTo(city, gameState) {
+    moveTo(player, city, gameState) {
         console.log("Player moveTo() called");
         // Use role's move strategy
         if (gameState.useAction()) {
-            const success = this.role.move(this, city, gameState);
+            const success = this.role.move(player, city, gameState);
             if (!success) {
                 // Return action if move failed
                 gameState.actionsRemaining++;

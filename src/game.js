@@ -1,6 +1,6 @@
 // PADRAO FACADE
 class Game {
-    constructor(numberOfPlayers = 2, difficulty = 'Normal') {
+    constructor(numberOfPlayers, difficulty = 'Normal') {
         this.gameState = new GameState(numberOfPlayers, difficulty);
     }
     
@@ -14,17 +14,15 @@ class Game {
     }
     
     // Player actions
-    movePlayer(cityName) {
+    movePlayer(cityName, player) {
         const currentPlayer = this.gameState.getCurrentPlayer();
         const targetCity = this.gameState.board?.findCityByName(cityName);
-        
         if (!targetCity) {
             console.log(`City ${cityName} not found`);
             return false;
         }
-
-        if (currentPlayer.moveTo(targetCity, this.gameState)) {
-            console.log(`${currentPlayer.name} moved to ${cityName}`);
+        if (currentPlayer.moveTo(player, targetCity, this.gameState)) {
+            console.log(`${currentPlayer.name} moved ${player.name} to ${cityName}`);
             return true;
         }
         

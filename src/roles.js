@@ -8,6 +8,9 @@ class Role {
     
     move(player, targetCity, gameState) {
         // Default movement logic
+        if (player.name != gameState.getCurrentPlayer().name) {
+            return false;
+        }
         if (this.canMoveToCity(player, targetCity) || gameState.airliftEvent) {
             player.location = targetCity;
             console.log(`${player.name} moved to ${targetCity.name}`);
@@ -179,17 +182,21 @@ class Researcher extends Role {
 
 class Dispatcher extends Role {
     move(player, targetCity, gameState) {
-        // Dispatcher can move other players
-        return this.moveOtherPlayer(gameState, targetCity) || super.move(player, targetCity, gameState);
+        return this.moveAnyPawn(player,gameState, targetCity)
     }
     
-    moveOtherPlayer(gameState, targetCity) {
+    moveAnyPawn(player, gameState, targetCity) {
         // Move any player to any city with another player
-        for (let otherPlayer of gameState.players) {
-            if (otherPlayer.location === targetCity) {
-                console.log(`Dispatcher can move players to ${targetCity.name}`);
-                return true;
+        if (this.canMoveToCity(player, targetCity) || gameState.airliftEvent) {
+            player.location = targetCity;
+            console.log(`${player.name} moved to ${targetCity.name}`);
+            
+            // If airlift was used, deactivate it after movement
+            if (gameState.airliftEvent) {
+                gameState.deactivateAirlift();
             }
+            
+            return true;
         }
         return false;
     }

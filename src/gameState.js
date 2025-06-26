@@ -46,9 +46,10 @@ class GameState {
     
     initializePlayers() {
         const roles = [Scientist, Medic, Researcher, Dispatcher];
-        
+        // Embaralhar os roles
+        const shuffledRoles = roles.sort(() => Math.random() - 0.5);
         for (let i = 0; i < this.numberOfPlayers; i++) {
-            const roleClass = roles[i % roles.length];
+            const roleClass = shuffledRoles[i % shuffledRoles.length];
             const role = new roleClass();
             const player = new Player(`Player ${i + 1}`, null, role);
             this.players.push(player);

@@ -118,7 +118,7 @@
         initializeGame() {
             
             // Create game instance
-            this.pandemicGame = new Game(2, 'Normal'); // 2 players, normal difficulty
+            this.pandemicGame = new Game(4, 'Easy');
             globalGame = this.pandemicGame;
             
             // Start the game
@@ -154,13 +154,13 @@
 
         createMap() {
             
-            // Create connections first (behind cities)
-            this.createConnections();
             
             // Create cities
             this.board.cities.forEach((city, index) => {
                 this.createCitySprite(city, index);
             });
+            // Create connections first
+            this.createConnections();
             
             // Create players
             this.gameState.players.forEach((player, index) => {
@@ -168,47 +168,31 @@
             });
         }
 
-        createConnections() {
-            const connections = [
-                // Americas
-                { from: 'Atlanta', to: 'New York' },
-                { from: 'Atlanta', to: 'São Paulo' },
-                
-                // Transatlantic
-                { from: 'New York', to: 'London' },
-                { from: 'São Paulo', to: 'Cairo' },
-                
-                // Europe/Africa
-                { from: 'London', to: 'Paris' },
-                { from: 'Paris', to: 'Cairo' },
-                { from: 'London', to: 'Mumbai' },
-                
-                // Asia connections
-                { from: 'Cairo', to: 'Mumbai' },
-                { from: 'Mumbai', to: 'Tokyo' },
-                { from: 'Paris', to: 'Tokyo' },
-                
-                // Trans-Pacific
-                { from: 'Tokyo', to: 'New York' }
-            ];
-            
-            connections.forEach(conn => {
-                const city1 = this.board.cities.find(c => c.name === conn.from);
-                const city2 = this.board.cities.find(c => c.name === conn.to);
-                
+createConnections() {
+    const drawn = new Set();
+    console.log(this.board.cities);
+    this.board.cities.forEach(city => {
+        city.neighbors.forEach(neighbor => {
+            // Evita desenhar duas vezes a mesma conexão
+            const key = [city.name, neighbor.name].sort().join('-');
+            if (!drawn.has(key)) {
+                const city1 = this.citySprites.get(city.name);
+                const city2 = this.citySprites.get(neighbor.name);
                 if (city1 && city2) {
                     const line = this.add.graphics();
                     line.lineStyle(3, 0x95a5a6, 0.6);
                     line.beginPath();
-                    line.moveTo(city1.x, city1.y);
-                    line.lineTo(city2.x, city2.y);
+                    line.moveTo(city1.container.x, city1.container.y);
+                    line.lineTo(city2.container.x, city2.container.y);
                     line.strokePath();
                     line.setDepth(1);
-                    
                     this.connectionLines.push(line);
                 }
-            });
-        }
+                drawn.add(key);
+            }
+        });
+    });
+}
 
         createCitySprite(city, index) {
             const container = this.add.container(city.x, city.y);
@@ -421,7 +405,7 @@
                 }
             });
             
-            if (nearestCity && this.isCurrentPlayer(player)) {
+            if (nearestCity) {
                 // Check if player has actions remaining
                 if (this.gameState.getActions() <= 0) {
                     this.showMessage("Sem ações restantes!", 0xe74c3c);
@@ -436,7 +420,7 @@
                 }
 
                 // Try to move player
-                const success = this.pandemicGame.movePlayer(nearestCity.name);
+                const success = this.pandemicGame.movePlayer(nearestCity.name, player);
                 if (success) {
                     // Animate to city
                     const citySprite = this.citySprites.get(nearestCity.name);
@@ -453,6 +437,7 @@
                     });
                     
                     this.updateHUD();
+                    this.disableCityClickForMovement();
                     
                     const actionsLeft = this.gameState.getActions();
                     this.showMessage(`${player.name} moveu para ${nearestCity.name} (${actionsLeft} ações restantes)`, 0x27ae60);
@@ -656,19 +641,8 @@
                 // Update end turn button highlight
                 this.updateEndTurnButtonHighlight(actions);
                 
-
-                
-                // Debug log for outbreak tracking
-                if (outbreakCount > 0) {
-                    console.log(`🔍 DEBUG: Current outbreak count is ${outbreakCount}`);
-                }
-                
-                // Update player cards
                 this.updatePlayerCardsDisplay();
-                
-                // Update current player indicators
                 this.updateCurrentPlayerIndicators();
-                
             } catch (error) {
                 console.warn("Error updating HUD:", error);
             }
@@ -1824,11 +1798,6 @@
                         });
                     }
                     
-                    // Make city clickable
-                    citySprite.container.setInteractive();
-                    citySprite.container.on('pointerdown', () => {
-                        this.movePlayerToCity(city);
-                    });
                 }
             });
         }
@@ -1845,42 +1814,11 @@
                     }
                     
                     // Remove click handler
-                    citySprite.container.removeInteractive();
                     citySprite.container.off('pointerdown');
                 }
             });
         }
         
-        movePlayerToCity(targetCity) {
-            const currentPlayer = this.gameState.getCurrentPlayer();
-            
-            // Check if we have actions remaining
-            if (this.gameState.getActions() <= 0) {
-                this.showMessage("Sem ações restantes!", 0xe74c3c);
-                return;
-            }
-            
-            // Attempt to move using role's move method
-            const success = currentPlayer.moveTo(targetCity, this.gameState);
-            
-            if (success) {
-                this.showMessage(`${currentPlayer.name} moveu para ${targetCity.name}`, 0x27ae60);
-                
-                // Update UI
-                this.updatePlayerPositions();
-                this.disableCityClickForMovement();
-                
-                const actionsLeft = this.gameState.getActions();
-                if (actionsLeft === 0) {
-                    setTimeout(() => {
-                        this.showMessage("💡 Sem ações restantes! Clique em FINALIZAR TURNO para continuar", 0xffeb3b);
-                    }, 2000);
-                }
-            } else {
-                this.showMessage("Não é possível mover para essa cidade", 0xe74c3c);
-            }
-        }
-
         updateCityDisplay() {
             // Update research station indicators on cities
             this.board.cities.forEach(city => {
