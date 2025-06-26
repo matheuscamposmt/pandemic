@@ -1,90 +1,17 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pandemic</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            overflow: hidden;
-        }
-        
-        .game-container {
-            background: rgba(0, 0, 0, 0.8);
-            border-radius: 15px;
-            padding: 10px;
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.3);
-            backdrop-filter: blur(10px);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .game-title {
-            text-align: center;
-            color: #e74c3c;
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            text-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
-        }
-        
-        #game-canvas {
-            border-radius: 10px;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-        }
-        
-        .loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(45deg, #2c3e50, #e74c3c);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            color: white;
-            font-size: 24px;
-            transition: opacity 0.5s ease-out;
-        }
-        
-        .loading-screen.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-        
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+    <link rel="stylesheet" href="styles/game.css">
 </head>
 <body>
     <div class="loading-screen" id="loadingScreen">
         <div class="spinner"></div>
-        <div>🦠 Loading Pandemic...</div>
-        <div style="font-size: 16px; margin-top: 10px;">Initializing Disease Control Centers</div>
+        <div>Carregando...</div>
+        <div style="font-size: 16px; margin-top: 10px;">Inicializando Centros de Controle de Doenças</div>
     </div>
 
     <div class="game-container">
@@ -94,7 +21,6 @@
         <div id="game-canvas"></div>
     </div>
 
-    <!-- Load game architecture in correct order -->
     <script src="src/settings.js"></script>
     <script src="src/colors.js"></script>
     <script src="src/utils.js"></script>
@@ -108,822 +34,659 @@
     <script src="src/phases.js"></script>
     <script src="src/gameState.js"></script>
     <script src="src/game.js"></script>
+        
+    <!-- UI Components -->
+    <script src="ui/actionMenu.js"></script>
+    <script src="ui/cardHand.js"></script>
+    <script src="ui/deckArea.js"></script>
 
-    <script>
-        console.log("🦠 Initializing Pandemic Game...");
+<script>
+    // Global game state
+    let globalGame = null;
+    let gameInitialized = false;
+    class PandemicGame extends Phaser.Scene {
+        constructor() {
+            super({ key: 'PandemicGame' });
+            
+            // Game components
+            this.pandemicGame = null;
+            this.gameState = null;
+            this.board = null;
+            
+            // Visual components
+            this.citySprites = new Map();
+            this.playerSprites = new Map();
+            this.connectionLines = [];
+            this.uiElements = {};
+            
+            // Game state
+            this.selectedCity = null;
+            this.selectedAction = null;
+            this.currentPlayerIndex = 0;
+            this.endTurnCalled = false;
+            
+            // Colors for diseases
+            this.diseaseColors = {
+                'Blue': 0x3498db,
+                'Yellow': 0xf1c40f,
+                'Black': 0x2c3e50,
+                'Red': 0xe74c3c
+            };
+            
+            // Role colors
+            this.roleColors = {
+                'Scientist': 0xffffff,
+                'Medic': 0xff8c00,
+                'Researcher': 0x8b4513,
+                'Dispatcher': 0x9932cc
+            };
+        }
 
-        // Global game state
-        let globalGame = null;
-        let gameInitialized = false;
+        preload() {
+            // Create loading progress
+            this.load.on('progress', (value) => {
+                console.log(`Loading: ${Math.round(value * 100)}%`);
+            });
+        }
 
-        class PandemicGame extends Phaser.Scene {
-            constructor() {
-                super({ key: 'PandemicGame' });
+        create() {
+            console.log("🎮 Creating Pandemic Game Scene...");
+            
+            try {
+                this.initializeGame();
+                this.createBackground();
+                this.createMap();
+                this.createUI();
+                this.createHUD();
+                this.setupEventHandlers();
                 
-                // Game components
-                this.pandemicGame = null;
-                this.gameState = null;
-                this.board = null;
+                // Hide loading screen
+                setTimeout(() => {
+                    const loadingScreen = document.getElementById('loadingScreen');
+                    loadingScreen.classList.add('hidden');
+                    setTimeout(() => loadingScreen.remove(), 500);
+                }, 2000);
                 
-                // Visual components
-                this.citySprites = new Map();
-                this.playerSprites = new Map();
-                this.connectionLines = [];
-                this.uiElements = {};
+                console.log("✅ Pandemic Game initialized successfully!");
                 
-                // Game state
-                this.selectedCity = null;
-                this.selectedAction = null;
-                this.currentPlayerIndex = 0;
-                
-                // Colors for diseases
-                this.diseaseColors = {
-                    'Blue': 0x3498db,
-                    'Yellow': 0xf1c40f,
-                    'Black': 0x2c3e50,
-                    'Red': 0xe74c3c
-                };
-                
-                // Role colors
-                this.roleColors = {
-                    'Scientist': 0xffffff,
-                    'Medic': 0xff8c00,
-                    'Researcher': 0x8b4513,
-                    'Dispatcher': 0x9932cc,
-                    'OperationsExpert': 0x228b22,
-                    'QuarantineSpecialist': 0x006400,
-                    'ContingencyPlanner': 0x4169e1
-                };
+            } catch (error) {
+                console.error("❌ Error initializing game:", error);
+                this.showError(error.message);
             }
+        }
 
-            preload() {
-                // Create loading progress
-                this.load.on('progress', (value) => {
-                    console.log(`Loading: ${Math.round(value * 100)}%`);
-                });
+        initializeGame() {
+            
+            // Create game instance
+            this.pandemicGame = new Game(2, 'Normal'); // 2 players, normal difficulty
+            globalGame = this.pandemicGame;
+            
+            // Start the game
+            this.pandemicGame.startGame();
+            
+            // Get references
+            this.gameState = this.pandemicGame.gameState;
+            this.board = this.gameState.board;
+            
+            
+            gameInitialized = true;
+        }
+
+        createBackground() {
+            // Dark world map background
+            const bg = this.add.graphics();
+            bg.fillGradientStyle(0x1a1a1a, 0x1a1a1a, 0x2c3e50, 0x2c3e50);
+            bg.fillRect(0, 0, 1600, 900);
+            
+            // Add subtle grid pattern
+            bg.lineStyle(1, 0x34495e, 0.2);
+            for (let x = 0; x < 1600; x += 50) {
+                bg.moveTo(x, 0);
+                bg.lineTo(x, 900);
             }
+            for (let y = 0; y < 900; y += 50) {
+                bg.moveTo(0, y);
+                bg.lineTo(1600, y);
+            }
+            bg.strokePath();
+            
+        }
 
-            create() {
-                console.log("🎮 Creating Pandemic Game Scene...");
+        createMap() {
+            
+            // Create connections first (behind cities)
+            this.createConnections();
+            
+            // Create cities
+            this.board.cities.forEach((city, index) => {
+                this.createCitySprite(city, index);
+            });
+            
+            // Create players
+            this.gameState.players.forEach((player, index) => {
+                this.createPlayerSprite(player, index);
+            });
+        }
+
+        createConnections() {
+            const connections = [
+                // Americas
+                { from: 'Atlanta', to: 'New York' },
+                { from: 'Atlanta', to: 'São Paulo' },
                 
-                try {
-                    this.initializeGame();
-                    this.createBackground();
-                    this.createMap();
-                    this.createUI();
-                    this.createHUD();
-                    this.setupEventHandlers();
+                // Transatlantic
+                { from: 'New York', to: 'London' },
+                { from: 'São Paulo', to: 'Cairo' },
+                
+                // Europe/Africa
+                { from: 'London', to: 'Paris' },
+                { from: 'Paris', to: 'Cairo' },
+                { from: 'London', to: 'Mumbai' },
+                
+                // Asia connections
+                { from: 'Cairo', to: 'Mumbai' },
+                { from: 'Mumbai', to: 'Tokyo' },
+                { from: 'Paris', to: 'Tokyo' },
+                
+                // Trans-Pacific
+                { from: 'Tokyo', to: 'New York' }
+            ];
+            
+            connections.forEach(conn => {
+                const city1 = this.board.cities.find(c => c.name === conn.from);
+                const city2 = this.board.cities.find(c => c.name === conn.to);
+                
+                if (city1 && city2) {
+                    const line = this.add.graphics();
+                    line.lineStyle(3, 0x95a5a6, 0.6);
+                    line.beginPath();
+                    line.moveTo(city1.x, city1.y);
+                    line.lineTo(city2.x, city2.y);
+                    line.strokePath();
+                    line.setDepth(1);
                     
-                    // Hide loading screen
-                    setTimeout(() => {
-                        const loadingScreen = document.getElementById('loadingScreen');
-                        loadingScreen.classList.add('hidden');
-                        setTimeout(() => loadingScreen.remove(), 500);
-                    }, 2000);
-                    
-                    console.log("✅ Pandemic Game initialized successfully!");
-                    
-                } catch (error) {
-                    console.error("❌ Error initializing game:", error);
-                    this.showError(error.message);
+                    this.connectionLines.push(line);
                 }
-            }
+            });
+        }
 
-            initializeGame() {
-                console.log("🎯 Initializing game logic...");
-                
-                // Create game instance
-                this.pandemicGame = new Game(2, 'Normal'); // 2 players, normal difficulty
-                globalGame = this.pandemicGame;
-                
-                // Start the game
-                this.pandemicGame.startGame();
-                
-                // Get references
-                this.gameState = this.pandemicGame.gameState;
-                this.board = this.gameState.board;
-                
-                console.log("📊 Game State:", this.gameState);
-                console.log("🗺️ Board:", this.board);
-                console.log("👥 Players:", this.gameState.players);
-                console.log("🏙️ Cities:", this.board.cities);
-                console.log("🃏 Player hands:", this.gameState.players.map(p => ({ name: p.name, hand: p.hand })));
-                console.log("📦 Player deck size:", this.board.playerDeck?.size());
-                console.log("💳 Actions remaining:", this.gameState.getActions());
-                
-                gameInitialized = true;
-            }
-
-            createBackground() {
-                // Dark world map background
-                const bg = this.add.graphics();
-                bg.fillGradientStyle(0x1a1a1a, 0x1a1a1a, 0x2c3e50, 0x2c3e50);
-                bg.fillRect(0, 0, 1600, 900);
-                
-                // Add subtle grid pattern
-                bg.lineStyle(1, 0x34495e, 0.2);
-                for (let x = 0; x < 1600; x += 50) {
-                    bg.moveTo(x, 0);
-                    bg.lineTo(x, 900);
-                }
-                for (let y = 0; y < 900; y += 50) {
-                    bg.moveTo(0, y);
-                    bg.lineTo(1600, y);
-                }
-                bg.strokePath();
-                
-                // Title
-                this.add.text(800, 40, '🦠 PANDEMIC: SAVE HUMANITY', {
-                    fontSize: '32px',
-                    color: '#e74c3c',
-                    fontStyle: 'bold',
-                    stroke: '#000000',
-                    strokeThickness: 3
-                }).setOrigin(0.5);
-            }
-
-            createMap() {
-                console.log("🗺️ Creating world map...");
-                
-                // Create connections first (behind cities)
-                this.createConnections();
-                
-                // Create cities
-                this.board.cities.forEach((city, index) => {
-                    this.createCitySprite(city, index);
+        createCitySprite(city, index) {
+            const container = this.add.container(city.x, city.y);
+            container.setDepth(10);
+            
+            // City background circle
+            const cityBg = this.add.graphics();
+            const cityColor = this.diseaseColors[city.color] || 0x95a5a6;
+            cityBg.fillStyle(cityColor, 0.3);
+            cityBg.lineStyle(3, cityColor, 0.8);
+            cityBg.fillCircle(0, 0, 35);
+            cityBg.strokeCircle(0, 0, 35);
+            
+            // City name
+            const nameText = this.add.text(0, -50, city.name, {
+                fontSize: '14px',
+                color: '#ffffff',
+                fontStyle: 'bold',
+                backgroundColor: 'rgba(0,0,0,0.7)',
+                padding: { x: 8, y: 4 }
+            }).setOrigin(0.5);
+            
+            // Research station indicator
+            const researchStation = this.add.text(0, 0, '🏥', {
+                fontSize: '20px'
+            }).setOrigin(0.5);
+            researchStation.setVisible(city.hasResearchStation || city.name === 'Atlanta');
+            
+            // Disease cubes container
+            const cubesContainer = this.add.container(0, 50);
+            
+            container.add([cityBg, nameText, researchStation, cubesContainer]);
+            
+            // Make interactive
+            container.setSize(70, 70);
+            container.setInteractive();
+            
+            // Hover effects
+            container.on('pointerover', () => {
+                this.tweens.add({
+                    targets: container,
+                    scale: 1.1,
+                    duration: 200,
+                    ease: 'Power2'
                 });
-                
-                // Create players
-                this.gameState.players.forEach((player, index) => {
-                    this.createPlayerSprite(player, index);
-                });
-            }
-
-            createConnections() {
-                const connections = [
-                    // Americas
-                    { from: 'Atlanta', to: 'New York' },
-                    { from: 'Atlanta', to: 'São Paulo' },
-                    
-                    // Transatlantic
-                    { from: 'New York', to: 'London' },
-                    { from: 'São Paulo', to: 'Cairo' },
-                    
-                    // Europe/Africa
-                    { from: 'London', to: 'Paris' },
-                    { from: 'Paris', to: 'Cairo' },
-                    { from: 'London', to: 'Mumbai' },
-                    
-                    // Asia connections
-                    { from: 'Cairo', to: 'Mumbai' },
-                    { from: 'Mumbai', to: 'Tokyo' },
-                    { from: 'Paris', to: 'Tokyo' },
-                    
-                    // Trans-Pacific
-                    { from: 'Tokyo', to: 'New York' }
-                ];
-                
-                connections.forEach(conn => {
-                    const city1 = this.board.cities.find(c => c.name === conn.from);
-                    const city2 = this.board.cities.find(c => c.name === conn.to);
-                    
-                    if (city1 && city2) {
-                        const line = this.add.graphics();
-                        line.lineStyle(3, 0x95a5a6, 0.6);
-                        line.beginPath();
-                        line.moveTo(city1.x, city1.y);
-                        line.lineTo(city2.x, city2.y);
-                        line.strokePath();
-                        line.setDepth(1);
-                        
-                        this.connectionLines.push(line);
-                    }
-                });
-            }
-
-            createCitySprite(city, index) {
-                const container = this.add.container(city.x, city.y);
-                container.setDepth(10);
-                
-                // City background circle
-                const cityBg = this.add.graphics();
-                const cityColor = this.diseaseColors[city.color] || 0x95a5a6;
-                cityBg.fillStyle(cityColor, 0.3);
-                cityBg.lineStyle(3, cityColor, 0.8);
-                cityBg.fillCircle(0, 0, 35);
-                cityBg.strokeCircle(0, 0, 35);
-                
-                // City name
-                const nameText = this.add.text(0, -50, city.name, {
-                    fontSize: '14px',
-                    color: '#ffffff',
-                    fontStyle: 'bold',
-                    backgroundColor: 'rgba(0,0,0,0.7)',
-                    padding: { x: 8, y: 4 }
-                }).setOrigin(0.5);
-                
-                // Research station indicator
-                const researchStation = this.add.text(0, 0, '🏥', {
-                    fontSize: '20px'
-                }).setOrigin(0.5);
-                researchStation.setVisible(city.hasResearchStation || city.name === 'Atlanta');
-                
-                // Disease cubes container
-                const cubesContainer = this.add.container(0, 50);
-                
-                container.add([cityBg, nameText, researchStation, cubesContainer]);
-                
-                // Make interactive
-                container.setSize(70, 70);
-                container.setInteractive();
-                
-                // Hover effects
-                container.on('pointerover', () => {
+                nameText.setStyle({ backgroundColor: 'rgba(52, 152, 219, 0.8)' });
+            });
+            
+            container.on('pointerout', () => {
+                if (this.selectedCity !== city) {
                     this.tweens.add({
                         targets: container,
-                        scale: 1.1,
+                        scale: 1,
                         duration: 200,
                         ease: 'Power2'
                     });
-                    nameText.setStyle({ backgroundColor: 'rgba(52, 152, 219, 0.8)' });
-                });
-                
-                container.on('pointerout', () => {
-                    if (this.selectedCity !== city) {
-                        this.tweens.add({
-                            targets: container,
-                            scale: 1,
-                            duration: 200,
-                            ease: 'Power2'
-                        });
-                        nameText.setStyle({ backgroundColor: 'rgba(0,0,0,0.7)' });
-                    }
-                });
-                
-                container.on('pointerdown', () => {
-                    this.onCityClick(city);
-                });
-                
-                // Store references
-                this.citySprites.set(city.name, {
-                    container: container,
-                    background: cityBg,
-                    nameText: nameText,
-                    researchStation: researchStation,
-                    cubesContainer: cubesContainer,
-                    city: city
-                });
-                
-                // Update disease cubes display
-                this.updateCityDiseaseCubes(city);
-            }
+                    nameText.setStyle({ backgroundColor: 'rgba(0,0,0,0.7)' });
+                }
+            });
+            
+            container.on('pointerdown', () => {
+                this.onCityClick(city);
+            });
+            
+            // Store references
+            this.citySprites.set(city.name, {
+                container: container,
+                background: cityBg,
+                nameText: nameText,
+                researchStation: researchStation,
+                cubesContainer: cubesContainer,
+                city: city
+            });
+            
+            // Update disease cubes display
+            this.updateCityDiseaseCubes(city);
+        }
 
-            updateCityDiseaseCubes(city) {
-                const citySprite = this.citySprites.get(city.name);
-                if (!citySprite) return;
-                
-                // Clear existing cubes
-                citySprite.cubesContainer.removeAll(true);
-                
-                // Add disease cubes
-                let cubeIndex = 0;
-                ['Blue', 'Yellow', 'Black', 'Red'].forEach(color => {
-                    const count = city.getInfectionCount(color);
-                    for (let i = 0; i < count; i++) {
-                        const cube = this.add.graphics();
-                        cube.fillStyle(this.diseaseColors[color]);
-                        cube.lineStyle(2, 0x000000);
-                        cube.fillRect(-6, -6, 12, 12);
-                        cube.strokeRect(-6, -6, 12, 12);
-                        
-                        const x = (cubeIndex % 3) * 15 - 15;
-                        const y = Math.floor(cubeIndex / 3) * 15;
-                        cube.x = x;
-                        cube.y = y;
-                        
-                        citySprite.cubesContainer.add(cube);
-                        cubeIndex++;
-                    }
-                });
-            }
+        updateCityDiseaseCubes(city) {
+            const citySprite = this.citySprites.get(city.name);
+            if (!citySprite) return;
+            
+            // Clear existing cubes
+            citySprite.cubesContainer.removeAll(true);
+            
+            // Add disease cubes
+            let cubeIndex = 0;
+            ['Blue', 'Yellow', 'Black', 'Red'].forEach(color => {
+                const count = city.getInfectionCount(color);
+                for (let i = 0; i < count; i++) {
+                    const cube = this.add.graphics();
+                    cube.fillStyle(this.diseaseColors[color]);
+                    cube.lineStyle(2, 0x000000);
+                    cube.fillRect(-6, -6, 12, 12);
+                    cube.strokeRect(-6, -6, 12, 12);
+                    
+                    const x = (cubeIndex % 3) * 15 - 15;
+                    const y = Math.floor(cubeIndex / 3) * 15;
+                    cube.x = x;
+                    cube.y = y;
+                    
+                    citySprite.cubesContainer.add(cube);
+                    cubeIndex++;
+                }
+            });
+        }
 
-            createPlayerSprite(player, index) {
-                const startCity = this.board.findCityByName('Atlanta');
-                const container = this.add.container(startCity.x, startCity.y);
+        createPlayerSprite(player, index) {
+            const startCity = this.board.findCityByName('Atlanta');
+            const container = this.add.container(startCity.x, startCity.y);
+            container.setDepth(20);
+            
+            // Player offset to prevent overlap
+            const offsetX = (index % 2) * 40 - 20;
+            const offsetY = Math.floor(index / 2) * 40 - 20;
+            container.x += offsetX;
+            container.y += offsetY;
+            
+            // Player background
+            const roleColor = this.roleColors[player.role.constructor.name] || 0x95a5a6;
+            const playerBg = this.add.graphics();
+            playerBg.fillStyle(roleColor, 0.8);
+            playerBg.lineStyle(3, 0xffffff);
+            playerBg.fillCircle(0, 0, 25);
+            playerBg.strokeCircle(0, 0, 25);
+            
+            // Role icon
+            const roleIcons = {
+                'Scientist': '🔬',
+                'Medic': '⚕️',
+                'Researcher': '📚',
+                'Dispatcher': '✈️'
+            };
+            
+            const roleIcon = this.add.text(0, 0, roleIcons[player.role.constructor.name] || '👤', {
+                fontSize: '20px'
+            }).setOrigin(0.5);
+            
+            // Player name
+            const playerName = this.add.text(0, -40, player.name, {
+                fontSize: '12px',
+                color: '#ffffff',
+                fontStyle: 'bold',
+                backgroundColor: 'rgba(0,0,0,0.7)',
+                padding: { x: 6, y: 3 }
+            }).setOrigin(0.5);
+            
+            // Current player indicator
+            const currentIndicator = this.add.graphics();
+            currentIndicator.lineStyle(4, 0xffeb3b);
+            currentIndicator.strokeCircle(0, 0, 35);
+            currentIndicator.setVisible(index === this.gameState.currentPlayerIndex);
+            
+            container.add([playerBg, roleIcon, playerName, currentIndicator]);
+            
+            // Make draggable
+            container.setSize(50, 50);
+            container.setInteractive({ draggable: true });
+            
+            // Drag events
+            container.on('dragstart', () => {
+                container.setDepth(100);
+                this.tweens.add({
+                    targets: container,
+                    scale: 1.2,
+                    duration: 200
+                });
+            });
+            
+            container.on('drag', (pointer, dragX, dragY) => {
+                container.x = dragX;
+                container.y = dragY;
+            });
+            
+            container.on('dragend', () => {
                 container.setDepth(20);
-                
-                // Player offset to prevent overlap
-                const offsetX = (index % 2) * 40 - 20;
-                const offsetY = Math.floor(index / 2) * 40 - 20;
-                container.x += offsetX;
-                container.y += offsetY;
-                
-                // Player background
-                const roleColor = this.roleColors[player.role.constructor.name] || 0x95a5a6;
-                const playerBg = this.add.graphics();
-                playerBg.fillStyle(roleColor, 0.8);
-                playerBg.lineStyle(3, 0xffffff);
-                playerBg.fillCircle(0, 0, 25);
-                playerBg.strokeCircle(0, 0, 25);
-                
-                // Role icon
-                const roleIcons = {
-                    'Scientist': '🔬',
-                    'Medic': '⚕️',
-                    'Researcher': '📚',
-                    'Dispatcher': '✈️',
-                    'OperationsExpert': '🏗️',
-                    'QuarantineSpecialist': '🛡️',
-                    'ContingencyPlanner': '📋'
-                };
-                
-                const roleIcon = this.add.text(0, 0, roleIcons[player.role.constructor.name] || '👤', {
-                    fontSize: '20px'
-                }).setOrigin(0.5);
-                
-                // Player name
-                const playerName = this.add.text(0, -40, player.name, {
-                    fontSize: '12px',
-                    color: '#ffffff',
-                    fontStyle: 'bold',
-                    backgroundColor: 'rgba(0,0,0,0.7)',
-                    padding: { x: 6, y: 3 }
-                }).setOrigin(0.5);
-                
-                // Current player indicator
-                const currentIndicator = this.add.graphics();
-                currentIndicator.lineStyle(4, 0xffeb3b);
-                currentIndicator.strokeCircle(0, 0, 35);
-                currentIndicator.setVisible(index === this.gameState.currentPlayerIndex);
-                
-                container.add([playerBg, roleIcon, playerName, currentIndicator]);
-                
-                // Make draggable
-                container.setSize(50, 50);
-                container.setInteractive({ draggable: true });
-                
-                // Drag events
-                container.on('dragstart', () => {
-                    container.setDepth(100);
-                    this.tweens.add({
-                        targets: container,
-                        scale: 1.2,
-                        duration: 200
-                    });
+                this.tweens.add({
+                    targets: container,
+                    scale: 1,
+                    duration: 200
                 });
                 
-                container.on('drag', (pointer, dragX, dragY) => {
-                    container.x = dragX;
-                    container.y = dragY;
-                });
-                
-                container.on('dragend', () => {
-                    container.setDepth(20);
-                    this.tweens.add({
-                        targets: container,
-                        scale: 1,
-                        duration: 200
-                    });
-                    
-                    this.handlePlayerMove(player, container);
-                });
-                
-                this.playerSprites.set(player.name, {
-                    container: container,
-                    background: playerBg,
-                    icon: roleIcon,
-                    nameText: playerName,
-                    currentIndicator: currentIndicator,
-                    player: player
-                });
-            }
+                this.handlePlayerMove(player, container);
+            });
+            
+            this.playerSprites.set(player.name, {
+                container: container,
+                background: playerBg,
+                icon: roleIcon,
+                nameText: playerName,
+                currentIndicator: currentIndicator,
+                player: player
+            });
+        }
 
-            handlePlayerMove(player, container) {
-                // Find nearest city
-                let nearestCity = null;
-                let minDistance = Infinity;
+        handlePlayerMove(player, container) {
+            // Find nearest city
+            let nearestCity = null;
+            let minDistance = Infinity;
+
+            this.citySprites.forEach((citySprite, cityName) => {
+                const distance = Phaser.Math.Distance.Between(
+                    container.x, container.y,
+                    citySprite.container.x, citySprite.container.y
+                );
                 
-                this.citySprites.forEach((citySprite, cityName) => {
-                    const distance = Phaser.Math.Distance.Between(
-                        container.x, container.y,
-                        citySprite.container.x, citySprite.container.y
-                    );
+                if (distance < 60 && distance < minDistance) {
+                    minDistance = distance;
+                    nearestCity = citySprite.city;
+                }
+            });
+            
+            if (nearestCity && this.isCurrentPlayer(player)) {
+                // Check if player has actions remaining
+                if (this.gameState.getActions() <= 0) {
+                    this.showMessage("Sem ações restantes!", 0xe74c3c);
+                    this.returnPlayerToPosition(player, container);
+                    return;
+                }
+
+                // Check if player is already in the city
+                if (player.location === nearestCity) {
+                    this.returnPlayerToPosition(player, container);
+                    return;
+                }
+
+                // Try to move player
+                const success = this.pandemicGame.movePlayer(nearestCity.name);
+                if (success) {
+                    // Animate to city
+                    const citySprite = this.citySprites.get(nearestCity.name);
+                    const playerIndex = this.gameState.players.indexOf(player);
+                    const offsetX = (playerIndex % 2) * 40 - 20;
+                    const offsetY = Math.floor(playerIndex / 2) * 40 - 20;
                     
-                    if (distance < 60 && distance < minDistance) {
-                        minDistance = distance;
-                        nearestCity = citySprite.city;
-                    }
-                });
-                
-                if (nearestCity && this.isCurrentPlayer(player)) {
-                    // Check if player has actions remaining
-                    if (this.gameState.getActions() <= 0) {
-                        this.showMessage("No actions remaining!", 0xe74c3c);
-                        this.returnPlayerToPosition(player, container);
-                        return;
-                    }
+                    this.tweens.add({
+                        targets: container,
+                        x: citySprite.container.x + offsetX,
+                        y: citySprite.container.y + offsetY,
+                        duration: 500,
+                        ease: 'Power2'
+                    });
                     
-                    // Try to move player
-                    const success = this.pandemicGame.movePlayer(nearestCity.name);
-                    if (success) {
-                        // Animate to city
-                        const citySprite = this.citySprites.get(nearestCity.name);
-                        const playerIndex = this.gameState.players.indexOf(player);
-                        const offsetX = (playerIndex % 2) * 40 - 20;
-                        const offsetY = Math.floor(playerIndex / 2) * 40 - 20;
-                        
-                        this.tweens.add({
-                            targets: container,
-                            x: citySprite.container.x + offsetX,
-                            y: citySprite.container.y + offsetY,
-                            duration: 500,
-                            ease: 'Power2'
-                        });
-                        
-                        this.updateHUD();
-                        
-                        const actionsLeft = this.gameState.getActions();
-                        this.showMessage(`${player.name} moved to ${nearestCity.name} (${actionsLeft} actions left)`, 0x27ae60);
-                        
-                        // Show hint when actions are 0
-                        if (actionsLeft === 0) {
-                            setTimeout(() => {
-                                this.showMessage("💡 No actions left! Click END TURN to continue", 0xffeb3b);
-                            }, 2000);
-                        }
-                    } else {
-                        this.returnPlayerToPosition(player, container);
-                        this.showMessage("Invalid move!", 0xe74c3c);
+                    this.updateHUD();
+                    
+                    const actionsLeft = this.gameState.getActions();
+                    this.showMessage(`${player.name} moveu para ${nearestCity.name} (${actionsLeft} ações restantes)`, 0x27ae60);
+                    
+                    // Show hint when actions are 0
+                    if (actionsLeft === 0) {
+                        setTimeout(() => {
+                            this.showMessage("💡 Nenhuma ação restante! Clique em FINALIZAR TURNO para continuar", 0xffeb3b);
+                        }, 2000);
                     }
                 } else {
                     this.returnPlayerToPosition(player, container);
-                    if (!this.isCurrentPlayer(player)) {
-                        this.showMessage("Not your turn!", 0xe74c3c);
-                    }
+                    this.showMessage("Movimento inválido!", 0xe74c3c);
+                }
+            } else {
+                this.returnPlayerToPosition(player, container);
+                if (!this.isCurrentPlayer(player)) {
+                    this.showMessage("Não é o seu turno!", 0xe74c3c);
                 }
             }
+        }
 
-            returnPlayerToPosition(player, container) {
-                const currentLocation = player.location || this.board.findCityByName('Atlanta');
-                const citySprite = this.citySprites.get(currentLocation.name);
-                const playerIndex = this.gameState.players.indexOf(player);
-                const offsetX = (playerIndex % 2) * 40 - 20;
-                const offsetY = Math.floor(playerIndex / 2) * 40 - 20;
+        returnPlayerToPosition(player, container) {
+            const currentLocation = player.location || this.board.findCityByName('Atlanta');
+            const citySprite = this.citySprites.get(currentLocation.name);
+            const playerIndex = this.gameState.players.indexOf(player);
+            const offsetX = (playerIndex % 2) * 40 - 20;
+            const offsetY = Math.floor(playerIndex / 2) * 40 - 20;
+            
+            this.tweens.add({
+                targets: container,
+                x: citySprite.container.x + offsetX,
+                y: citySprite.container.y + offsetY,
+                duration: 300,
+                ease: 'Back.easeOut'
+            });
+        }
+
+        createUI() {
+            // Initialize new UI components
+            this.actionMenuUI = new ActionMenuUI(this);
+            this.cardHandUI = new CardHandUI(this);
+            this.deckAreaUI = new DeckAreaUI(this);
+            
+            // Create the UI components
+            this.actionMenuUI.create();
+            this.cardHandUI.create();
+            this.deckAreaUI.create();
+            
+            // End turn button - repositioned for new layout
+            this.createEndTurnButton();
+            
+
+        }
+        
+        updateDeckCount() {
+            if (this.deckAreaUI) {
+                this.deckAreaUI.updateAll();
+            }
+        }
+        
+        updatePlayerHand() {
+            if (this.cardHandUI) {
+                this.cardHandUI.updateHand();
+            }
+        }
+        
+
+        
+        animateCardDraw(card, player = null) {
+            // Use the specified player, or fallback to current player
+            const targetPlayer = player || this.gameState.getCurrentPlayer();
+             
+            if (this.cardHandUI) {
+                this.cardHandUI.animateCardDraw(card, targetPlayer);
+            }
+            if (this.deckAreaUI) {
+                this.deckAreaUI.animateDrawFromPlayerDeck();
+            }
+            
+            // Update the hand for the player who drew the card
+            setTimeout(() => {
+                if (this.cardHandUI) {
+                    this.cardHandUI.updateHand(targetPlayer);
+                }
+            }, 700); // After card animation completes
+        }
+        
+        // Animation for discarding cards
+        animateCardDiscard(cardName) {
+            if (this.cardHandUI) {
+                this.cardHandUI.animateCardDiscard(cardName);
+            }
+            if (this.deckAreaUI) {
+                this.deckAreaUI.animateDiscard();
+            }
+        }
+
+        createEndTurnButton() {
+            // Positioned to the right, avoiding card area
+            const container = this.add.container(1300, 800);
+            
+            const button = this.add.graphics();
+            button.fillStyle(0xf39c12, 0.9);
+            button.lineStyle(4, 0xffffff, 0.9);
+            button.fillRoundedRect(-80, -30, 160, 60, 12);
+            button.strokeRoundedRect(-80, -30, 160, 60, 12);
+            
+            const iconText = this.add.text(0, -10, '⏭️', {
+                fontSize: '22px'
+            }).setOrigin(0.5);
+            
+            const buttonText = this.add.text(0, 15, 'FINALIZAR TURNO', {
+                fontSize: '14px',
+                color: '#ffffff',
+                fontStyle: 'bold'
+            }).setOrigin(0.5);
+            
+            container.add([button, iconText, buttonText]);
+            container.setSize(160, 60);
+            container.setInteractive();
+            
+            container.on('pointerover', () => {
+                button.clear();
+                button.fillStyle(0xf39c12, 1);
+                button.lineStyle(5, 0xffffff, 1);
+                button.fillRoundedRect(-80, -30, 160, 60, 12);
+                button.strokeRoundedRect(-80, -30, 160, 60, 12);
                 
                 this.tweens.add({
                     targets: container,
-                    x: citySprite.container.x + offsetX,
-                    y: citySprite.container.y + offsetY,
-                    duration: 300,
+                    scale: 1.08,
+                    duration: 200,
                     ease: 'Back.easeOut'
                 });
-            }
+            });
+            
+            container.on('pointerout', () => {
+                button.clear();
+                button.fillStyle(0xf39c12, 0.9);
+                button.lineStyle(4, 0xffffff, 0.9);
+                button.fillRoundedRect(-80, -30, 160, 60, 12);
+                button.strokeRoundedRect(-80, -30, 160, 60, 12);
+                
+                this.tweens.add({
+                    targets: container,
+                    scale: 1,
+                    duration: 200,
+                    ease: 'Back.easeIn'
+                });
+            });
+            
+            container.on('pointerdown', () => {
+                this.endTurn();
+            });
+            
+            this.uiElements.endTurnButton = container;
+        }
 
-            createUI() {
-                // Action buttons panel
-                const actionPanel = this.add.graphics();
-                actionPanel.fillStyle(0x2c3e50, 0.9);
-                actionPanel.lineStyle(2, 0xffffff, 0.5);
-                actionPanel.fillRoundedRect(50, 750, 600, 120, 10);
-                actionPanel.strokeRoundedRect(50, 750, 600, 120, 10);
-                
-                this.add.text(350, 770, 'ACTIONS', {
-                    fontSize: '18px',
-                    color: '#ffffff',
-                    fontStyle: 'bold'
-                }).setOrigin(0.5);
-                
-                // Action buttons
-                const actions = [
-                    { text: 'Move', color: 0x3498db, action: 'move' },
-                    { text: 'Treat', color: 0xe74c3c, action: 'treat' },
-                    { text: 'Build', color: 0x27ae60, action: 'build' },
-                    { text: 'Cure', color: 0x9b59b6, action: 'cure' },
-                    { text: 'Share', color: 0xf39c12, action: 'share' }
-                ];
-                
-                actions.forEach((action, index) => {
-                    const button = this.createActionButton(
-                        80 + index * 110, 810,
-                        action.text, action.color, action.action
-                    );
-                });
-                
-                // End turn button
-                this.createEndTurnButton();
-                
-                // Game status panel
-                this.createStatusPanel();
-            }
+        createHUD() {
+            // Top HUD bar
+            const hudBar = this.add.graphics();
+            hudBar.fillStyle(0x000000, 0.8);
+            hudBar.fillRect(0, 0, 1600, 60);
+            hudBar.setDepth(1000);
+            
+            this.uiElements.hudCurrentPlayer = this.add.text(20, 30, '', {
+                fontSize: '16px',
+                color: '#ffffff',
+                fontStyle: 'bold'
+            }).setOrigin(0, 0.5).setDepth(1001);
+            
+            this.uiElements.hudPhase = this.add.text(800, 30, '', {
+                fontSize: '16px',
+                color: '#ffeb3b',
+                fontStyle: 'bold'
+            }).setOrigin(0.5, 0.5).setDepth(1001);
+            
+            this.uiElements.hudActions = this.add.text(1400, 30, '', {
+                fontSize: '16px',
+                color: '#ffffff',
+                fontStyle: 'bold'
+            }).setOrigin(1, 0.5).setDepth(1001);
+            
+            this.updateHUD();
+        }
 
-            createActionButton(x, y, text, color, action) {
-                const container = this.add.container(x, y);
+        updateHUD() {
+            if (!this.gameState) return;
+            
+            try {
+                const currentPlayer = this.gameState.getCurrentPlayer();
+                const phase = this.gameState.currentPhase.constructor.name;
+                const actions = this.gameState.getActions();
                 
-                const button = this.add.graphics();
-                button.fillStyle(color);
-                button.lineStyle(2, 0xffffff);
-                button.fillRoundedRect(-40, -15, 80, 30, 5);
-                button.strokeRoundedRect(-40, -15, 80, 30, 5);
+                // Update HUD
+                this.uiElements.hudCurrentPlayer.setText(`👤 ${currentPlayer.name} (${currentPlayer.role.constructor.name})`);
+                this.uiElements.hudPhase.setText(`${phase.replace('Phase', ' Phase')}`);
+                this.uiElements.hudActions.setText(`⚡ Ações: ${actions}/4`);
                 
-                const buttonText = this.add.text(0, 0, text, {
-                    fontSize: '12px',
-                    color: '#ffffff',
-                    fontStyle: 'bold'
-                }).setOrigin(0.5);
+                // Update end turn button highlight
+                this.updateEndTurnButtonHighlight(actions);
                 
-                container.add([button, buttonText]);
-                container.setSize(80, 30);
-                container.setInteractive();
-                
-                container.on('pointerover', () => {
-                    this.tweens.add({
-                        targets: container,
-                        scale: 1.1,
-                        duration: 150
-                    });
-                });
-                
-                container.on('pointerout', () => {
-                    this.tweens.add({
-                        targets: container,
-                        scale: 1,
-                        duration: 150
-                    });
-                });
-                
-                container.on('pointerdown', () => {
-                    this.onActionClick(action);
-                });
-                
-                return container;
-            }
 
-            createEndTurnButton() {
-                const container = this.add.container(1400, 810);
                 
-                const button = this.add.graphics();
-                button.fillStyle(0xf39c12);
-                button.lineStyle(3, 0xffffff);
-                button.fillRoundedRect(-60, -20, 120, 40, 8);
-                button.strokeRoundedRect(-60, -20, 120, 40, 8);
-                
-                const buttonText = this.add.text(0, 0, 'END TURN', {
-                    fontSize: '14px',
-                    color: '#ffffff',
-                    fontStyle: 'bold'
-                }).setOrigin(0.5);
-                
-                container.add([button, buttonText]);
-                container.setSize(120, 40);
-                container.setInteractive();
-                
-                container.on('pointerover', () => {
-                    this.tweens.add({
-                        targets: container,
-                        scale: 1.05,
-                        duration: 150
-                    });
-                });
-                
-                container.on('pointerout', () => {
-                    this.tweens.add({
-                        targets: container,
-                        scale: 1,
-                        duration: 150
-                    });
-                });
-                
-                container.on('pointerdown', () => {
-                    this.endTurn();
-                });
-                
-                this.uiElements.endTurnButton = container;
-            }
-
-            createStatusPanel() {
-                // Create collapsible side panel - starts hidden
-                this.statusPanelExpanded = false;
-                
-                // Create toggle button that stays fixed on the right edge
-                this.statusToggleButton = this.add.container(1560, 300);
-                this.statusToggleButton.setDepth(1000);
-                
-                const toggleButton = this.add.graphics();
-                toggleButton.fillStyle(0x3498db, 0.9);
-                toggleButton.lineStyle(2, 0xffffff);
-                toggleButton.fillRoundedRect(-20, -50, 40, 100, 8);
-                toggleButton.strokeRoundedRect(-20, -50, 40, 100, 8);
-                
-                this.statusToggleIcon = this.add.text(0, 0, '📊', {
-                    fontSize: '20px'
-                }).setOrigin(0.5);
-                
-                const toggleText = this.add.text(0, 25, 'STATUS', {
-                    fontSize: '8px',
-                    color: '#ffffff',
-                    fontStyle: 'bold'
-                }).setOrigin(0.5);
-                
-                this.statusToggleButton.add([toggleButton, this.statusToggleIcon, toggleText]);
-                this.statusToggleButton.setSize(40, 100);
-                this.statusToggleButton.setInteractive();
-                
-                // Create the actual status panel - starts off-screen
-                this.statusPanelContainer = this.add.container(1600, 100);
-                this.statusPanelContainer.setDepth(500);
-                
-                // Status panel background
-                const statusPanel = this.add.graphics();
-                statusPanel.fillStyle(0x2c3e50, 0.95);
-                statusPanel.lineStyle(2, 0xffffff, 0.5);
-                statusPanel.fillRoundedRect(0, 0, 350, 600, 10);
-                statusPanel.strokeRoundedRect(0, 0, 350, 600, 10);
-                
-                // Panel content
-                const titleText = this.add.text(175, 30, 'GAME STATUS', {
-                    fontSize: '18px',
-                    color: '#ffffff',
-                    fontStyle: 'bold'
-                }).setOrigin(0.5);
-                
-                // Status text elements
-                this.uiElements.currentPlayerText = this.add.text(20, 70, '', {
-                    fontSize: '14px',
-                    color: '#ffffff'
-                });
-                
-                this.uiElements.actionsText = this.add.text(20, 100, '', {
-                    fontSize: '14px',
-                    color: '#ffffff'
-                });
-                
-                this.uiElements.phaseText = this.add.text(20, 130, '', {
-                    fontSize: '14px',
-                    color: '#ffffff'
-                });
-                
-                this.uiElements.outbreaksText = this.add.text(20, 170, '', {
-                    fontSize: '14px',
-                    color: '#e74c3c'
-                });
-                
-                this.uiElements.curesText = this.add.text(20, 200, '', {
-                    fontSize: '14px',
-                    color: '#27ae60'
-                });
-                
-                this.uiElements.infectionRateText = this.add.text(20, 230, '', {
-                    fontSize: '14px',
-                    color: '#f39c12'
-                });
-                
-                // Player cards section
-                const cardsTitle = this.add.text(175, 280, 'CURRENT PLAYER CARDS', {
-                    fontSize: '16px',
-                    color: '#ffffff',
-                    fontStyle: 'bold'
-                }).setOrigin(0.5);
-                
-                this.uiElements.playerCardsContainer = this.add.container(175, 320);
-                
-                // Add everything to panel
-                this.statusPanelContainer.add([
-                    statusPanel, titleText, cardsTitle,
-                    this.uiElements.currentPlayerText,
-                    this.uiElements.actionsText,
-                    this.uiElements.phaseText,
-                    this.uiElements.outbreaksText,
-                    this.uiElements.curesText,
-                    this.uiElements.infectionRateText,
-                    this.uiElements.playerCardsContainer
-                ]);
-                
-                // Toggle button events
-                this.statusToggleButton.on('pointerdown', () => {
-                    this.toggleStatusPanel();
-                });
-                
-                this.statusToggleButton.on('pointerover', () => {
-                    this.tweens.add({
-                        targets: this.statusToggleButton,
-                        scale: 1.1,
-                        duration: 200
-                    });
-                });
-                
-                this.statusToggleButton.on('pointerout', () => {
-                    this.tweens.add({
-                        targets: this.statusToggleButton,
-                        scale: 1,
-                        duration: 200
-                    });
-                });
-            }
-
-            toggleStatusPanel() {
-                this.statusPanelExpanded = !this.statusPanelExpanded;
-                
-                if (this.statusPanelExpanded) {
-                    // Show panel - slide in from right
-                    this.tweens.add({
-                        targets: this.statusPanelContainer,
-                        x: 1250,
-                        duration: 400,
-                        ease: 'Power2.easeOut'
-                    });
-                    this.statusToggleIcon.setText('❌');
-                } else {
-                    // Hide panel - slide out to right
-                    this.tweens.add({
-                        targets: this.statusPanelContainer,
-                        x: 1600,
-                        duration: 400,
-                        ease: 'Power2.easeIn'
-                    });
-                    this.statusToggleIcon.setText('📊');
+                // Debug log for outbreak tracking
+                if (outbreakCount > 0) {
+                    console.log(`🔍 DEBUG: Current outbreak count is ${outbreakCount}`);
                 }
+                
+                // Update player cards
+                this.updatePlayerCardsDisplay();
+                
+                // Update current player indicators
+                this.updateCurrentPlayerIndicators();
+                
+            } catch (error) {
+                console.warn("Error updating HUD:", error);
             }
+        }
 
-            createHUD() {
-                // Top HUD bar
-                const hudBar = this.add.graphics();
-                hudBar.fillStyle(0x000000, 0.8);
-                hudBar.fillRect(0, 0, 1600, 60);
-                hudBar.setDepth(1000);
-                
-                this.uiElements.hudCurrentPlayer = this.add.text(20, 30, '', {
-                    fontSize: '16px',
-                    color: '#ffffff',
-                    fontStyle: 'bold'
-                }).setOrigin(0, 0.5).setDepth(1001);
-                
-                this.uiElements.hudPhase = this.add.text(800, 30, '', {
-                    fontSize: '16px',
-                    color: '#ffeb3b',
-                    fontStyle: 'bold'
-                }).setOrigin(0.5, 0.5).setDepth(1001);
-                
-                this.uiElements.hudActions = this.add.text(1400, 30, '', {
-                    fontSize: '16px',
-                    color: '#ffffff',
-                    fontStyle: 'bold'
-                }).setOrigin(1, 0.5).setDepth(1001);
-                
-                this.updateHUD();
-            }
-
-            updateHUD() {
-                if (!this.gameState) return;
-                
-                try {
-                    const currentPlayer = this.gameState.getCurrentPlayer();
-                    const phase = this.gameState.currentPhase.constructor.name;
-                    const actions = this.gameState.getActions();
-                    
-                    // Update HUD
-                    this.uiElements.hudCurrentPlayer.setText(`👤 ${currentPlayer.name} (${currentPlayer.role.constructor.name})`);
-                    this.uiElements.hudPhase.setText(`${phase.replace('Phase', ' Phase')}`);
-                    this.uiElements.hudActions.setText(`⚡ Actions: ${actions}/4`);
-                    
-                    // Update end turn button highlight
-                    this.updateEndTurnButtonHighlight(actions);
-                    
-                    // Update status panel
-                    const outbreakCount = this.gameState.getOutbreakCount();
-                    this.uiElements.currentPlayerText.setText(`Current Player: ${currentPlayer.name}`);
-                    this.uiElements.actionsText.setText(`Actions Remaining: ${actions}/4`);
-                    this.uiElements.phaseText.setText(`Phase: ${phase.replace('Phase', '')}`);
-                    this.uiElements.outbreaksText.setText(`Outbreaks: ${outbreakCount}/8`);
-                    this.uiElements.curesText.setText(`Cures Found: ${this.gameState.getAllCures().length}/4`);
-                    this.uiElements.infectionRateText.setText(`Infection Rate: ${this.gameState.getCurrentInfectionRate()}`);
-                    
-                    // Debug log for outbreak tracking
-                    if (outbreakCount > 0) {
-                        console.log(`🔍 DEBUG: Current outbreak count is ${outbreakCount}`);
-                    }
-                    
-                    // Update player cards
-                    this.updatePlayerCardsDisplay();
-                    
-                    // Update current player indicators
-                    this.updateCurrentPlayerIndicators();
-                    
-                } catch (error) {
-                    console.warn("Error updating HUD:", error);
-                }
-            }
-
-            updatePlayerCardsDisplay() {
-                // Clear existing cards
+        updatePlayerCardsDisplay() {
+            // Update the new hand display system
+            this.updatePlayerHand();
+            this.updateDeckCount();
+            
+            if (this.uiElements.playerCardsContainer) {
                 this.uiElements.playerCardsContainer.removeAll(true);
-                
+
                 const currentPlayer = this.gameState.getCurrentPlayer();
                 const cards = currentPlayer.hand || [];
                 
-                console.log(`Updating cards display for ${currentPlayer.name}:`, cards);
-                
                 if (cards.length === 0) {
-                    const noCardsText = this.add.text(0, 0, 'No cards in hand', {
+                    const noCardsText = this.add.text(0, 0, 'Nenhuma carta na mão', {
                         fontSize: '12px',
                         color: '#95a5a6',
                         fontStyle: 'italic'
@@ -932,879 +695,1333 @@
                     return;
                 }
                 
-                cards.forEach((card, index) => {
-                    const cardBg = this.add.graphics();
-                    
-                    // Color based on card type
-                    let cardColor = 0x34495e;
-                    if (card.type === 'CityCard') {
-                        cardColor = this.diseaseColors[card.color] || 0x34495e;
-                    } else if (card.type === 'EpidemicCard') {
-                        cardColor = 0xe74c3c;
-                    } else if (card.type === 'EventCard') {
-                        cardColor = 0x9b59b6;
-                    }
-                    
-                    cardBg.fillStyle(cardColor, 0.8);
-                    cardBg.lineStyle(2, 0xffffff);
-                    cardBg.fillRoundedRect(-40, -15, 80, 30, 5);
-                    cardBg.strokeRoundedRect(-40, -15, 80, 30, 5);
-                    
-                    const cardName = card.name.length > 10 ? card.name.substring(0, 10) + '...' : card.name;
-                    const cardText = this.add.text(0, -5, cardName, {
-                        fontSize: '9px',
-                        color: '#ffffff',
-                        fontStyle: 'bold'
-                    }).setOrigin(0.5);
-                    
-                    const cardType = this.add.text(0, 5, card.type.replace('Card', ''), {
-                        fontSize: '7px',
-                        color: '#ffffff',
-                        fontStyle: 'italic'
-                    }).setOrigin(0.5);
-                    
-                    const cardContainer = this.add.container(
-                        (index % 3) * 90 - 90,
-                        Math.floor(index / 3) * 40
-                    );
-                    cardContainer.add([cardBg, cardText, cardType]);
-                    
-                    // Add subtle animation for new cards
-                    cardContainer.setScale(0.8);
-                    this.tweens.add({
-                        targets: cardContainer,
-                        scale: 1,
-                        duration: 300,
-                        ease: 'Back.easeOut',
-                        delay: index * 50
-                    });
-                    
-                    this.uiElements.playerCardsContainer.add(cardContainer);
-                });
+
+                const summaryText = this.add.text(0, 0, `${cards.length} cartas na mão`, {
+                    fontSize: '12px',
+                    color: '#ffffff',
+                    fontStyle: 'bold'
+                }).setOrigin(0.5);
+                
+                this.uiElements.playerCardsContainer.add(summaryText);
                 
                 // Show hand limit warning
                 if (cards.length > 7) {
-                    this.showMessage(`⚠️ Hand limit exceeded! (${cards.length}/7) - Must discard`, 0xff6b35);
+                    this.showMessage(`⚠️ Limite de mão excedido! (${cards.length}/7) - Deve descartar`, 0xff6b35);
                 }
             }
+        }
 
-            updateCurrentPlayerIndicators() {
-                const currentIndex = this.gameState.currentPlayerIndex;
+        updateCurrentPlayerIndicators() {
+            const currentIndex = this.gameState.currentPlayerIndex;
+            
+            this.playerSprites.forEach((sprite, playerName) => {
+                const player = this.gameState.players.find(p => p.name === playerName);
+                const isCurrentPlayer = this.gameState.players.indexOf(player) === currentIndex;
+                sprite.currentIndicator.setVisible(isCurrentPlayer);
+            });
+        }
+
+        updateEndTurnButtonHighlight(actions) {
+            if (!this.uiElements.endTurnButton) return;
+            
+            // Get the button graphics (first child)
+            const buttonGraphics = this.uiElements.endTurnButton.list[0];
+            
+            if (actions === 0) {
+                // Highlight when no actions remaining
+                buttonGraphics.clear();
+                buttonGraphics.fillStyle(0xff6b35); // Bright orange
+                buttonGraphics.lineStyle(4, 0xffeb3b); // Yellow border
+                buttonGraphics.fillRoundedRect(-60, -20, 120, 40, 8);
+                buttonGraphics.strokeRoundedRect(-60, -20, 120, 40, 8);
                 
-                this.playerSprites.forEach((sprite, playerName) => {
-                    const player = this.gameState.players.find(p => p.name === playerName);
-                    const isCurrentPlayer = this.gameState.players.indexOf(player) === currentIndex;
-                    sprite.currentIndicator.setVisible(isCurrentPlayer);
+                // Add pulsing effect
+                if (!this.endTurnPulse) {
+                    this.endTurnPulse = this.tweens.add({
+                        targets: this.uiElements.endTurnButton,
+                        scale: { from: 1, to: 1.1 },
+                        duration: 800,
+                        ease: 'Sine.easeInOut',
+                        yoyo: true,
+                        repeat: -1
+                    });
+                }
+            } else {
+                // Normal state
+                buttonGraphics.clear();
+                buttonGraphics.fillStyle(0xf39c12); // Normal orange
+                buttonGraphics.lineStyle(3, 0xffffff); // White border
+                buttonGraphics.fillRoundedRect(-60, -20, 120, 40, 8);
+                buttonGraphics.strokeRoundedRect(-60, -20, 120, 40, 8);
+                
+                // Stop pulsing
+                if (this.endTurnPulse) {
+                    this.endTurnPulse.destroy();
+                    this.endTurnPulse = null;
+                    this.uiElements.endTurnButton.setScale(1);
+                }
+            }
+        }
+
+        onCityClick(city) {
+            this.selectedCity = city;
+            console.log(`Selected city: ${city.name}`);
+            
+            // Highlight selected city
+            this.citySprites.forEach((sprite, cityName) => {
+                if (cityName === city.name) {
+                    sprite.nameText.setStyle({ backgroundColor: 'rgba(52, 152, 219, 0.8)' });
+                    sprite.container.setScale(1.1);
+                } else {
+                    sprite.nameText.setStyle({ backgroundColor: 'rgba(0,0,0,0.7)' });
+                    sprite.container.setScale(1);
+                }
+            });
+            
+            this.showMessage(`Selected: ${city.name}`, 0x3498db);
+        }
+
+        onActionClick(action) {
+            this.selectedAction = action;
+            console.log(`Selected action: ${action}`);
+            
+            const currentPlayer = this.gameState.getCurrentPlayer();
+            
+            switch (action) {
+                case 'treat':
+                    const currentPlayer = this.gameState.getCurrentPlayer();
+                    if (currentPlayer.location.hasInfection()) {
+                        this.treatDisease(currentPlayer.location);
+                    } else {
+                        this.showMessage("No disease to treat in current city", 0xe74c3c);
+                    }
+                    break;
+                    
+                case 'build':
+                    this.buildResearchStation();
+                    break;
+                    
+                case 'cure':
+                    this.discoverCure();
+                    break;
+            }
+        }
+
+        treatDisease(city) {
+            if (this.gameState.getActions() <= 0) {
+                this.showMessage("Sem ações restantes!", 0xe74c3c);
+                return;
+            }
+            
+            const success = this.pandemicGame.treatDisease();
+            
+            if (success) {
+                this.updateCityDiseaseCubes(city);
+                this.updateHUD();
+                
+                const actionsLeft = this.gameState.getActions();
+                this.showMessage(`Doença tratada em ${city.name} (${actionsLeft} ações restantes)`, 0x27ae60);
+                
+                // Show hint when actions are 0
+                if (actionsLeft === 0) {
+                    setTimeout(() => {
+                        this.showMessage("💡 No actions left! Click END TURN to continue", 0xffeb3b);
+                    }, 2000);
+                }
+            } else {
+                this.showMessage("Não é possível tratar doença aqui", 0xe74c3c);
+            }
+        }
+
+        buildResearchStation() {
+            if (this.gameState.getActions() <= 0) {
+                this.showMessage("Sem ações restantes!", 0xe74c3c);
+                return;
+            }
+            
+            const currentPlayer = this.gameState.getCurrentPlayer();
+            const currentLocation = currentPlayer.location;
+            
+            // Check if player has the required city card
+            const cityCard = currentPlayer.hand.find(card => 
+                card.name === currentLocation.name && card.type === 'CityCard'
+            );
+            
+            if (cityCard) {
+                // Animate card discard
+                this.animateCardDiscard(cityCard.name);
+                
+                setTimeout(() => {
+                    const success = this.pandemicGame.buildResearchStation();
+                    
+                    if (success) {
+                        const citySprite = this.citySprites.get(currentLocation.name);
+                        if (citySprite) {
+                            citySprite.researchStation.setVisible(true);
+                            
+                            // Add building animation
+                            this.tweens.add({
+                                targets: citySprite.researchStation,
+                                scale: { from: 0, to: 1 },
+                                duration: 600,
+                                ease: 'Back.easeOut'
+                            });
+                        }
+                        
+                        this.updateHUD();
+                        
+                        const actionsLeft = this.gameState.getActions();
+                        this.showMessage(`🏥 Estação de pesquisa construída em ${currentLocation.name} (${actionsLeft} ações restantes)`, 0x27ae60);
+                        
+                        if (actionsLeft === 0) {
+                            setTimeout(() => {
+                                this.showMessage("💡 No actions left! Click END TURN to continue", 0xffeb3b);
+                            }, 2000);
+                        }
+                    } else {
+                        this.showMessage("Não é possível construir estação de pesquisa", 0xe74c3c);
+                    }
+                }, 300); // Delay to let discard animation play
+            } else {
+                this.showMessage(`Você precisa da carta da cidade ${currentLocation.name} para construir aqui`, 0xe74c3c);
+            }
+        }
+
+        discoverCure() {
+            if (this.gameState.getActions() <= 0) {
+                this.showMessage("Sem ações restantes!", 0xe74c3c);
+                return;
+            }
+            
+            const currentPlayer = this.gameState.getCurrentPlayer();
+            
+            // Check if player is at research station
+            if (!currentPlayer.location.hasResearchStation) {
+                this.showMessage("Você deve estar em uma estação de pesquisa para descobrir curas", 0xe74c3c);
+                return;
+            }
+            
+            // Find which color cure can be discovered
+            const colors = ['Blue', 'Yellow', 'Black', 'Red'];
+            let cureColor = null;
+            let cardsToDiscard = [];
+            
+            for (let color of colors) {
+                if (!this.gameState.hasCure(color)) {
+                    const cardsOfColor = currentPlayer.hand.filter(card => 
+                        card.type === 'CityCard' && card.color === color
+                    );
+                    
+                    const requiredCards = currentPlayer.role.constructor.name === 'Scientist' ? 4 : 5;
+                    
+                    if (cardsOfColor.length >= requiredCards) {
+                        cureColor = color;
+                        cardsToDiscard = cardsOfColor.slice(0, requiredCards);
+                        break;
+                    }
+                }
+            }
+            
+            if (cureColor && cardsToDiscard.length > 0) {
+                // Animate discarding all cure cards
+                cardsToDiscard.forEach((card, index) => {
+                    setTimeout(() => {
+                        this.animateCardDiscard(card.name);
+                    }, index * 150);
+                });
+                
+                // Wait for animations, then discover cure
+                setTimeout(() => {
+                    const success = this.pandemicGame.discoverCure();
+                    
+                    if (success) {
+                        this.updateHUD();
+                        
+                        const actionsLeft = this.gameState.getActions();
+                        this.showMessage(`🧪 Doença ${cureColor} curada! (${actionsLeft} ações restantes)`, 0x9b59b6);
+                        
+                        // Add cure celebration effect
+                        this.createCureEffect(cureColor);
+                        
+                        // Check win condition
+                        if (this.gameState.getAllCures().length === 4) {
+                            setTimeout(() => {
+                                this.showWinScreen();
+                            }, 2000);
+                            return;
+                        }
+                        
+                        if (actionsLeft === 0) {
+                            setTimeout(() => {
+                                this.showMessage("💡 No actions left! Click END TURN to continue", 0xffeb3b);
+                            }, 2000);
+                        }
+                    } else {
+                        this.showMessage("Não é possível descobrir cura", 0xe74c3c);
+                    }
+                }, cardsToDiscard.length * 150 + 300);
+            } else {
+                const requiredCards = currentPlayer.role.constructor.name === 'Scientist' ? 4 : 5;
+                this.showMessage(`Você precisa de ${requiredCards} cartas da mesma cor para descobrir uma cura`, 0xe74c3c);
+            }
+        }
+        
+        createCureEffect(color) {
+            // Create cure discovery celebration effect
+            const centerX = 800;
+            const centerY = 450;
+            
+            for (let i = 0; i < 12; i++) {
+                const particle = this.add.graphics();
+                particle.fillStyle(this.diseaseColors[color] || 0xffffff);
+                particle.fillCircle(0, 0, 8);
+                particle.setPosition(centerX, centerY);
+                particle.setDepth(2000);
+                
+                const angle = (i / 12) * Math.PI * 2;
+                const distance = 150;
+                
+                this.tweens.add({
+                    targets: particle,
+                    x: centerX + Math.cos(angle) * distance,
+                    y: centerY + Math.sin(angle) * distance,
+                    alpha: 0,
+                    scale: { from: 1, to: 2 },
+                    duration: 1500,
+                    ease: 'Power2.easeOut',
+                    onComplete: () => {
+                        particle.destroy();
+                    }
                 });
             }
+            
+            // Show cure message
+            const cureText = this.add.text(centerX, centerY, `${color.toUpperCase()}\nCURED!`, {
+                fontSize: '32px',
+                color: `#${this.diseaseColors[color].toString(16).padStart(6, '0')}`,
+                fontStyle: 'bold',
+                align: 'center',
+                stroke: '#000000',
+                strokeThickness: 4
+            }).setOrigin(0.5).setDepth(2001);
+            
+            this.tweens.add({
+                targets: cureText,
+                scale: { from: 0, to: 1.2 },
+                duration: 500,
+                ease: 'Back.easeOut',
+                onComplete: () => {
+                    this.tweens.add({
+                        targets: cureText,
+                        alpha: 0,
+                        scale: 0.8,
+                        duration: 1000,
+                        delay: 1000,
+                        onComplete: () => {
+                            cureText.destroy();
+                        }
+                    });
+                }
+            });
+        }
 
-            updateEndTurnButtonHighlight(actions) {
-                if (!this.uiElements.endTurnButton) return;
+        endTurn() {
+
+            if (this.endTurnCalled) {
+                return;
+            }
+
+            // Check if game is already over
+            if (this.gameState.gameOver || this.gameState.gameWon) {
+                console.log("Game is already over, cannot end turn");
+                return;
+            }
+
+            this.endTurnCalled = true;
+
+            try {
+                // Store current player's hand before phases execute
+                const currentPlayer = this.gameState.getCurrentPlayer();
+                const handBefore = [...(currentPlayer.hand || [])];
                 
-                // Get the button graphics (first child)
-                const buttonGraphics = this.uiElements.endTurnButton.list[0];
+                // Show phase transition animation with hand state
+                this.showPhaseTransition(handBefore);
                 
-                if (actions === 0) {
-                    // Highlight when no actions remaining
-                    buttonGraphics.clear();
-                    buttonGraphics.fillStyle(0xff6b35); // Bright orange
-                    buttonGraphics.lineStyle(4, 0xffeb3b); // Yellow border
-                    buttonGraphics.fillRoundedRect(-60, -20, 120, 40, 8);
-                    buttonGraphics.strokeRoundedRect(-60, -20, 120, 40, 8);
+                // Execute the actual game logic
+                const result = this.pandemicGame.endTurn();
+                
+                // Handle game end conditions after animation
+                setTimeout(() => {
+                    if (result.gameOver) {
+                        if (result.won) {
+                            this.showWinScreen();
+                        } else {
+                            this.showLoseScreen();
+                        }
+                    } else {
+                        this.endTurnCalled = false;
+                        // Update all visuals after phases complete
+                        this.updateHUD();
+                        this.updateCurrentPlayerIndicators();
+                        this.updatePlayerCardsDisplay();
+                        
+                        // Update disease cubes
+                        this.board.cities.forEach(city => {
+                            this.updateCityDiseaseCubes(city);
+                        });
+                        
+                        const newPlayer = this.gameState.getCurrentPlayer();
+                        this.showMessage(`Turno de ${newPlayer.name} começa!`, 0x27ae60);
+                    }
+                }, 7000); // Wait for animation to complete (increased for longer phase delays)
+                
+            } catch (error) {
+                console.error("❌ Error in endTurn():", error);
+                this.showMessage("Erro ao finalizar turno!", 0xe74c3c);
+                this.endTurnCalled = false;
+            }
+        }
+
+        isCurrentPlayer(player) {
+            return this.gameState.getCurrentPlayer() === player;
+        }
+
+        showPhaseTransition(handBefore = null) {
+            // Store the player who was active when endTurn was called
+            const playerWhoEndedTurn = this.gameState.getCurrentPlayer();
+            if (!handBefore) {
+                handBefore = [...(playerWhoEndedTurn.hand || [])];
+            }
+            
+            // Create overlay for phase transitions
+            const overlay = this.add.graphics();
+            overlay.fillStyle(0x000000, 0.7);
+            overlay.fillRect(0, 0, 1600, 900);
+            overlay.setDepth(1500);
+            
+            // Phase transition container
+            const phaseContainer = this.add.container(800, 450);
+            phaseContainer.setDepth(1501);
+            
+            // Background for phase info
+            const phaseBg = this.add.graphics();
+            phaseBg.fillStyle(0x2c3e50, 0.95);
+            phaseBg.lineStyle(3, 0x3498db);
+            phaseBg.fillRoundedRect(-350, -180, 700, 360, 15);
+            phaseBg.strokeRoundedRect(-350, -180, 700, 360, 15);
+            
+            // Phase sequence
+            const infectionRate = this.gameState.getCurrentInfectionRate();
+            
+            const phases = [
+                { name: 'FASE DE COMPRA', icon: '🃏', color: '#3498db', description: `${playerWhoEndedTurn.name} compra 2 cartas` },
+                { name: 'FASE DE INFECÇÃO', icon: '🦠', color: '#e74c3c', description: `Infectando ${infectionRate} cidades` },
+                { name: 'PRÓXIMO TURNO', icon: '👤', color: '#27ae60', description: 'Próximo jogador inicia...' }
+            ];
+            
+            phaseContainer.add(phaseBg);
+            
+            // Title
+            const title = this.add.text(0, -130, '⚡ EXECUTANDO FASES', {
+                fontSize: '24px',
+                color: '#ffffff',
+                fontStyle: 'bold'
+            }).setOrigin(0.5);
+            phaseContainer.add(title);
+            
+            // Show each phase with animation
+            let currentPhaseIndex = 0;
+            const phaseText = this.add.text(0, -80, '', {
+                fontSize: '20px',
+                color: '#ffffff',
+                fontStyle: 'bold'
+            }).setOrigin(0.5);
+            
+            const descText = this.add.text(0, -50, '', {
+                fontSize: '14px',
+                color: '#95a5a6'
+            }).setOrigin(0.5);
+            
+            // Cards/Cities display container
+            const cardsDisplayContainer = this.add.container(0, 20);
+            phaseContainer.add(cardsDisplayContainer);
+            
+            const progressBar = this.add.graphics();
+            progressBar.lineStyle(4, 0x3498db);
+            progressBar.strokeRect(-300, 130, 600, 10);
+            
+            const progressFill = this.add.graphics();
+            
+            phaseContainer.add([phaseText, descText, progressBar, progressFill]);
+            
+            // Animate through phases (visual only)
+            const showNextPhase = () => {
+                if (currentPhaseIndex < phases.length) {
+                    const phase = phases[currentPhaseIndex];
                     
-                    // Add pulsing effect
-                    if (!this.endTurnPulse) {
-                        this.endTurnPulse = this.tweens.add({
-                            targets: this.uiElements.endTurnButton,
-                            scale: { from: 1, to: 1.1 },
-                            duration: 800,
+                    phaseText.setText(`${phase.icon} ${phase.name}`);
+                    phaseText.setColor(phase.color);
+                    descText.setText(phase.description);
+                    
+                    // Clear previous phase content
+                    cardsDisplayContainer.removeAll(true);
+                    
+                    // Special handling for different phases
+                    if (currentPhaseIndex === 0) {
+                        // Draw Phase - show cards
+                        setTimeout(() => {
+                            this.showDrawnCards(cardsDisplayContainer, handBefore, playerWhoEndedTurn);
+                        }, 500);
+                    } else if (currentPhaseIndex === 1) {
+                        // Infect Phase - show infected cities
+                        setTimeout(() => {
+                            this.showInfectedCities(cardsDisplayContainer);
+                        }, 500);
+                    }
+                    
+                    // Update progress bar
+                    progressFill.clear();
+                    progressFill.fillStyle(0x3498db);
+                    const width = ((currentPhaseIndex + 1) / phases.length) * 600;
+                    progressFill.fillRect(-300, 130, width, 10);
+                    
+                    // Scale animation
+                    phaseText.setScale(0.8);
+                    this.tweens.add({
+                        targets: phaseText,
+                        scale: 1,
+                        duration: 300,
+                        ease: 'Back.easeOut'
+                    });
+                    
+                    currentPhaseIndex++;
+                    
+                    // Continue to next phase - different delays for different phases
+                    let phaseDelay = 1500; // Default delay
+                    if (currentPhaseIndex === 2) {
+                        phaseDelay = 3000; // Longer delay for infection phase (index 1)
+                    } else if (currentPhaseIndex === 1) {
+                        phaseDelay = 2500; // Longer delay for draw phase (index 0) to see cards
+                    }
+                    
+                    this.time.delayedCall(phaseDelay, showNextPhase);
+                } else {
+                    // Fade out overlay
+                    this.tweens.add({
+                        targets: [overlay, phaseContainer],
+                        alpha: 0,
+                        duration: 500,
+                        onComplete: () => {
+                            overlay.destroy();
+                            phaseContainer.destroy();
+                        }
+                    });
+                }
+            };
+            
+            // Start phase animation
+            showNextPhase();
+        }
+
+        showDrawnCards(container, handBefore, playerWhoEndedTurn = null) {
+            // Use the player who ended the turn (drew the cards), not the current player
+            const playerWhoDrewCards = playerWhoEndedTurn || this.gameState.getCurrentPlayer();
+            const handAfter = playerWhoDrewCards.hand || [];
+            
+            // Use as cartas realmente sacadas do deck de jogador
+            const newCards = this.gameState.getLastDrawnPlayerCards();
+            
+            if (newCards.length === 0) {
+                const noCardsText = this.add.text(0, 0, 'Nenhuma carta comprada', {
+                    fontSize: '14px',
+                    color: '#95a5a6',
+                    fontStyle: 'italic'
+                }).setOrigin(0.5);
+                container.add(noCardsText);
+                return;
+            }
+            
+            // Title for drawn cards
+            const drawnTitle = this.add.text(0, -20, 'Cartas Compradas:', {
+                fontSize: '14px',
+                color: '#ffffff',
+                fontStyle: 'bold'
+            }).setOrigin(0.5);
+            container.add(drawnTitle);
+            
+            // Display each drawn card and trigger hand animations
+            newCards.forEach((card, index) => {
+                const cardContainer = this.add.container(
+                    (index - (newCards.length - 1) / 2) * 120,
+                    20
+                );
+                
+                // Card background
+                const cardBg = this.add.graphics();
+                let cardColor = 0x34495e;
+                if (card.type === 'CityCard') {
+                    cardColor = this.diseaseColors[card.color] || 0x34495e;
+                } else if (card.type === 'EpidemicCard') {
+                    cardColor = 0xe74c3c;
+                } else if (card.type === 'EventCard') {
+                    cardColor = 0x9b59b6;
+                }
+                cardBg.fillStyle(cardColor, 0.9);
+                cardBg.lineStyle(3, 0xffffff);
+                cardBg.fillRoundedRect(-50, -30, 100, 60, 8);
+                cardBg.strokeRoundedRect(-50, -30, 100, 60, 8);
+                
+                // Card name
+                const cardName = card.name.length > 12 ? card.name.substring(0, 12) + '...' : card.name;
+                const cardText = this.add.text(0, -10, cardName, {
+                    fontSize: '11px',
+                    color: '#ffffff',
+                    fontStyle: 'bold',
+                    wordWrap: { width: 90 }
+                }).setOrigin(0.5);
+                
+                // Card type
+                let cardTypeText = card.type.replace('Card', '');
+                if (card.type === 'EpidemicCard') {
+                    cardTypeText = 'Epidemia';
+                }
+                const cardType = this.add.text(0, 8, cardTypeText, {
+                    fontSize: '9px',
+                    color: '#ffffff',
+                    fontStyle: 'italic'
+                }).setOrigin(0.5);
+                
+                cardContainer.add([cardBg, cardText, cardType]);
+                
+                // Animate card appearance
+                cardContainer.setAlpha(0);
+                cardContainer.setScale(0.5);
+                this.tweens.add({
+                    targets: cardContainer,
+                    alpha: 1,
+                    scale: 1,
+                    duration: 400,
+                    delay: index * 200,
+                    ease: 'Back.easeOut'
+                });
+                
+                // Special effect for Epidemic cards
+                if (card.type === 'EpidemicCard') {
+                    this.tweens.add({
+                        targets: cardContainer,
+                        scale: { from: 1, to: 1.1 },
+                        duration: 300,
+                        delay: (index * 200) + 400,
+                        ease: 'Sine.easeInOut',
+                        yoyo: true,
+                        repeat: 2
+                    });
+                }
+                
+                container.add(cardContainer);
+                
+                setTimeout(() => {
+                    // Só anima para a mão se não for EpidemicCard
+                    if (card.type !== 'EpidemicCard') {
+                        this.animateCardDraw(card, playerWhoDrewCards);
+                    }
+                }, (index * 200) + 1000);
+            });
+        }
+
+        showInfectedCities(container) {
+            // Get infection results from the last infection phase
+            const infectionResults = this.gameState.getLastInfectionResults();
+            
+            if (!infectionResults || infectionResults.length === 0) {
+                const noInfectionText = this.add.text(0, 0, 'Nenhuma cidade infectada', {
+                    fontSize: '14px',
+                    color: '#95a5a6',
+                    fontStyle: 'italic'
+                }).setOrigin(0.5);
+                container.add(noInfectionText);
+                return;
+            }
+            
+            // Title for infected cities
+            const infectedTitle = this.add.text(0, -30, 'Cidades Infectadas:', {
+                fontSize: '14px',
+                color: '#ffffff',
+                fontStyle: 'bold'
+            }).setOrigin(0.5);
+            container.add(infectedTitle);
+            
+            // Display each infected city
+            infectionResults.forEach((result, index) => {
+                const cityContainer = this.add.container(
+                    (index - (infectionResults.length - 1) / 2) * 140,
+                    15
+                );
+                
+                // City background
+                const cityBg = this.add.graphics();
+                const diseaseColor = this.diseaseColors[result.color] || 0xe74c3c;
+                
+                cityBg.fillStyle(diseaseColor, 0.8);
+                cityBg.lineStyle(3, 0xffffff);
+                cityBg.fillRoundedRect(-60, -35, 120, 70, 8);
+                cityBg.strokeRoundedRect(-60, -35, 120, 70, 8);
+                
+                // City name
+                const cityName = result.cityName.length > 10 ? result.cityName.substring(0, 10) + '...' : result.cityName;
+                const cityText = this.add.text(0, -20, cityName, {
+                    fontSize: '12px',
+                    color: '#ffffff',
+                    fontStyle: 'bold'
+                }).setOrigin(0.5);
+                
+                // Infection info - show cubes added or prevention status
+                let infectionText, infectionColor;
+                if (result.prevented) {
+                    infectionText = '🛡️ PREVENIDO';
+                    infectionColor = '#27ae60';
+                } else if (result.epidemic) {
+                    infectionText = `+${result.cubesAdded} 🦠💥`;
+                    infectionColor = '#ff6b35'; // Orange for epidemic
+                } else {
+                    infectionText = `+${result.cubesAdded} 🦠`;
+                    infectionColor = '#ffffff';
+                }
+                
+                const infectionInfo = this.add.text(0, -5, infectionText, {
+                    fontSize: '11px',
+                    color: infectionColor,
+                    fontStyle: 'bold'
+                }).setOrigin(0.5);
+                
+                // Total cubes now
+                const totalCubes = this.add.text(0, 8, `Total: ${result.totalCubes}`, {
+                    fontSize: '9px',
+                    color: '#ffffff'
+                }).setOrigin(0.5);
+                
+                // Outbreak indicator
+                if (result.outbreak) {
+                    const outbreakIcon = this.add.text(0, 20, '💥 SURTO!', {
+                        fontSize: '8px',
+                        color: '#ffeb3b',
+                        fontStyle: 'bold'
+                    }).setOrigin(0.5);
+                    cityContainer.add(outbreakIcon);
+                }
+                
+                cityContainer.add([cityBg, cityText, infectionInfo, totalCubes]);
+                
+                // Animate city appearance
+                cityContainer.setAlpha(0);
+                cityContainer.setScale(0.5);
+                
+                this.tweens.add({
+                    targets: cityContainer,
+                    alpha: 1,
+                    scale: 1,
+                    duration: 400,
+                    delay: index * 250,
+                    ease: 'Back.easeOut'
+                });
+                
+                // Special effect for outbreaks
+                if (result.outbreak) {
+                    this.tweens.add({
+                        targets: cityContainer,
+                        scale: { from: 1, to: 1.15 },
+                        duration: 200,
+                        delay: (index * 250) + 400,
+                        ease: 'Sine.easeInOut',
+                        yoyo: true,
+                        repeat: 3
+                    });
+                }
+                
+                container.add(cityContainer);
+            });
+        }
+
+        showMessage(text, color = 0xffffff) {
+            // Remove existing message
+            if (this.currentMessage) {
+                this.currentMessage.destroy();
+            }
+            
+            this.currentMessage = this.add.text(800, 700, text, {
+                fontSize: '18px',
+                color: `#${color.toString(16).padStart(6, '0')}`,
+                fontStyle: 'bold',
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                padding: { x: 15, y: 8 }
+            }).setOrigin(0.5).setDepth(1000);
+            
+            // Fade out after 3 seconds
+            this.time.delayedCall(3000, () => {
+                if (this.currentMessage) {
+                    this.tweens.add({
+                        targets: this.currentMessage,
+                        alpha: 0,
+                        duration: 500,
+                        onComplete: () => {
+                            if (this.currentMessage) {
+                                this.currentMessage.destroy();
+                                this.currentMessage = null;
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        showWinScreen() {
+            const winScreen = this.add.graphics();
+            winScreen.fillStyle(0x000000, 0.8);
+            winScreen.fillRect(0, 0, 1600, 900);
+            winScreen.setDepth(2000);
+            
+            this.add.text(800, 320, '🎉 VICTORY! 🎉', {
+                fontSize: '48px',
+                color: '#27ae60',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 4
+            }).setOrigin(0.5).setDepth(2001);
+            
+            this.add.text(800, 380, 'HUMANIDADE SALVA!', {
+                fontSize: '32px',
+                color: '#ffffff',
+                fontStyle: 'bold'
+            }).setOrigin(0.5).setDepth(2001);
+            
+            // Show win reason according to official rules
+            const curesFound = this.gameState.getAllCures().length;
+            this.add.text(800, 430, `🧪 Todas as 4 doenças foram curadas!`, {
+                fontSize: '24px',
+                color: '#ffffff',
+                fontStyle: 'bold'
+            }).setOrigin(0.5).setDepth(2001);
+            
+            // Show disease status
+            const diseaseStatus = ['Blue', 'Yellow', 'Black', 'Red'].map(color => {
+                const cured = this.gameState.hasCure(color);
+                const eradicated = this.gameState.isEradicated(color);
+                if (eradicated) return `${color}: Erradicada ⭐`;
+                if (cured) return `${color}: Curada ✅`;
+                return `${color}: Ativa ❌`;
+            }).join('  |  ');
+            
+            this.add.text(800, 470, diseaseStatus, {
+                fontSize: '14px',
+                color: '#27ae60'
+            }).setOrigin(0.5).setDepth(2001);
+            
+            // Show final stats
+            const outbreaks = this.gameState.getOutbreakCount();
+            const difficulty = this.gameState.difficulty;
+            this.add.text(800, 510, `Dificuldade ${difficulty} completada com ${outbreaks}/8 surtos`, {
+                fontSize: '16px',
+                color: '#95a5a6'
+            }).setOrigin(0.5).setDepth(2001);
+            
+            this.add.text(800, 570, 'Clique em qualquer lugar para jogar novamente', {
+                fontSize: '18px',
+                color: '#95a5a6'
+            }).setOrigin(0.5).setDepth(2001);
+            
+            this.input.once('pointerdown', () => {
+                this.scene.restart();
+            });
+        }
+
+        showLoseScreen() {
+            const loseScreen = this.add.graphics();
+            loseScreen.fillStyle(0x000000, 0.8);
+            loseScreen.fillRect(0, 0, 1600, 900);
+            loseScreen.setDepth(2000);
+            
+            this.add.text(800, 320, '💀 HUMANIDADE PERDIDA 💀', {
+                fontSize: '48px',
+                color: '#e74c3c',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 4
+            }).setOrigin(0.5).setDepth(2001);
+            
+            // Determine and show lose reason
+            const loseReason = this.getLoseReason();
+            this.add.text(800, 400, `Condição de Derrota: ${loseReason.title}`, {
+                fontSize: '24px',
+                color: '#ffffff',
+                fontStyle: 'bold'
+            }).setOrigin(0.5).setDepth(2001);
+            
+            this.add.text(800, 440, loseReason.description, {
+                fontSize: '18px',
+                color: '#e74c3c'
+            }).setOrigin(0.5).setDepth(2001);
+            
+            // Show game stats
+            this.add.text(800, 480, loseReason.stats, {
+                fontSize: '16px',
+                color: '#95a5a6'
+            }).setOrigin(0.5).setDepth(2001);
+            
+            // Show what was achieved
+            const curesFound = this.gameState.getAllCures().length;
+            this.add.text(800, 520, `Progresso: ${curesFound}/4 curas descobertas`, {
+                fontSize: '16px',
+                color: '#f39c12'
+            }).setOrigin(0.5).setDepth(2001);
+            
+            this.add.text(800, 580, 'Clique para tentar novamente', {
+                fontSize: '18px',
+                color: '#95a5a6'
+            }).setOrigin(0.5).setDepth(2001);
+            
+            this.input.once('pointerdown', () => {
+                this.scene.restart();
+            });
+        }
+
+        getLoseReason() {
+            const outbreaks = this.gameState.getOutbreakCount();
+            const playerDeckSize = this.board.playerDeck?.size() || 0;
+            
+            // Check different lose conditions
+            if (outbreaks >= 8) {
+                return {
+                    title: "Muitos Surtos",
+                    description: "💥 8 surtos ocorreram - pandemia fora de controle!",
+                    stats: `Contagem final de surtos: ${outbreaks}/8`
+                };
+            }
+            
+            if (playerDeckSize === 0) {
+                return {
+                    title: "Baralho de Jogador Esgotado",
+                    description: "📚 Não há mais cartas do jogador para comprar - tempo esgotado!",
+                    stats: `Cartas restantes no baralho de jogador: ${playerDeckSize}`
+                };
+            }
+            
+            // Check if any disease cubes are exhausted
+            const diseaseCubeCounts = this.gameState.getDiseaseCubeCounts();
+            const exhaustedColors = [];
+            
+            ['Blue', 'Yellow', 'Black', 'Red'].forEach(color => {
+                const remaining = diseaseCubeCounts[color] || 0;
+                if (remaining <= 0) {
+                    exhaustedColors.push(color);
+                }
+            });
+            
+            if (exhaustedColors.length > 0) {
+                return {
+                    title: "Cubos de Doença Esgotados",
+                    description: `🦠 ${exhaustedColors.join(', ')} cubos de doença esgotados!`,
+                    stats: `As doenças se espalharam demais para conter`
+                };
+            }
+            
+            // Default lose condition
+            return {
+                title: "Fim de Jogo",
+                description: "As doenças se espalharam demais...",
+                stats: "Múltiplas condições de derrota podem ter sido acionadas"
+            };
+        }
+
+        showError(message) {
+            this.add.text(800, 450, `❌ ERROR: ${message}`, {
+                fontSize: '24px',
+                color: '#e74c3c',
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                padding: { x: 20, y: 10 }
+            }).setOrigin(0.5).setDepth(2000);
+        }
+
+
+
+        showEventCardDialog(card) {
+            // Create dialog overlay
+            const overlay = this.add.graphics();
+            overlay.fillStyle(0x000000, 0.8);
+            overlay.fillRect(0, 0, 1600, 900);
+            overlay.setDepth(3000);
+            
+            // Dialog container
+            const dialog = this.add.container(800, 450);
+            dialog.setDepth(3001);
+            
+            // Dialog background
+            const dialogBg = this.add.graphics();
+            dialogBg.fillStyle(0x2c3e50, 0.95);
+            dialogBg.lineStyle(4, 0x9b59b6);
+            dialogBg.fillRoundedRect(-250, -150, 500, 300, 15);
+            dialogBg.strokeRoundedRect(-250, -150, 500, 300, 15);
+            
+            // Card icon
+            const cardIcon = this.add.text(0, -100, '⚡', {
+                fontSize: '48px'
+            }).setOrigin(0.5);
+            
+            // Card name
+            const cardName = this.add.text(0, -50, card.name, {
+                fontSize: '24px',
+                color: '#ffffff',
+                fontStyle: 'bold'
+            }).setOrigin(0.5);
+            
+            // Card description
+            const description = this.getEventCardDescription(card);
+            const cardDesc = this.add.text(0, -10, description, {
+                fontSize: '16px',
+                color: '#ecf0f1',
+                wordWrap: { width: 450 },
+                align: 'center'
+            }).setOrigin(0.5);
+            
+            // Use button
+            const useButton = this.add.graphics();
+            useButton.fillStyle(0x27ae60, 0.9);
+            useButton.lineStyle(2, 0x2ecc71);
+            useButton.fillRoundedRect(-80, 50, 160, 40, 8);
+            useButton.strokeRoundedRect(-80, 50, 160, 40, 8);
+            useButton.setInteractive(new Phaser.Geom.Rectangle(-80, 50, 160, 40), Phaser.Geom.Rectangle.Contains);
+            
+            const useText = this.add.text(0, 70, 'Usar Carta Evento', {
+                fontSize: '14px',
+                color: '#ffffff',
+                fontStyle: 'bold'
+            }).setOrigin(0.5);
+            
+            // Cancel button
+            const cancelButton = this.add.graphics();
+            cancelButton.fillStyle(0xe74c3c, 0.9);
+            cancelButton.lineStyle(2, 0xc0392b);
+            cancelButton.fillRoundedRect(-80, 100, 160, 40, 8);
+            cancelButton.strokeRoundedRect(-80, 100, 160, 40, 8);
+            cancelButton.setInteractive(new Phaser.Geom.Rectangle(-80, 100, 160, 40), Phaser.Geom.Rectangle.Contains);
+            
+            const cancelText = this.add.text(0, 120, 'Cancelar', {
+                fontSize: '14px',
+                color: '#ffffff',
+                fontStyle: 'bold'
+            }).setOrigin(0.5);
+            
+            dialog.add([dialogBg, cardIcon, cardName, cardDesc, useButton, useText, cancelButton, cancelText]);
+            
+            // Function to close dialog
+            const closeDialog = () => {
+                if (overlay && overlay.scene) {
+                    overlay.destroy();
+                }
+                if (dialog && dialog.scene) {
+                    dialog.destroy();
+                }
+            };
+            
+            // Button interactions
+            useButton.on('pointerdown', () => {
+                closeDialog();
+                this.useEventCard(card);
+            });
+            
+            cancelButton.on('pointerdown', () => {
+                closeDialog();
+            });
+            
+            // Close on overlay click
+            overlay.setInteractive();
+            overlay.on('pointerdown', () => {
+                closeDialog();
+            });
+            
+            // Close on ESC key
+            const escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+            escKey.once('down', () => {
+                closeDialog();
+            });
+        }
+        
+        getEventCardDescription(card) {
+            switch(card.name) {
+                case 'Airlift':
+                    return 'Permite mover para qualquer cidade no próximo movimento (ignora restrições normais).';
+                case 'One Quiet Night':
+                    return 'Pula o próximo passo de Infect Cities (não vira nenhuma carta de infecção).';
+                case 'Government Grant':
+                    return 'Adiciona 1 estação de pesquisa à sua cidade atual (não é necessária nenhuma carta de cidade).';
+                default:
+                    return 'Carta de evento especial com habilidades únicas.';
+            }
+        }
+        
+        useEventCard(card) {
+            const currentPlayer = this.gameState.getCurrentPlayer();
+            
+            // Check if player has the card
+            if (!currentPlayer.hasCard(card.name)) {
+                this.showMessage("Você não tem esta carta!", 0xe74c3c);
+                return;
+            }
+            
+            // Use the event card
+            const success = card.useEvent(this.gameState, this.board);
+            
+            if (success) {
+                // Remove card from player's hand
+                currentPlayer.discard(card.name);
+                
+                // Animate card discard
+                if (this.cardHandUI) {
+                    this.cardHandUI.animateCardDiscard(card.name);
+                }
+                
+                this.showMessage(`Carta de Evento usada: ${card.name}`, 0x27ae60);
+                
+                // Special handling for Airlift
+                if (card.name === 'Airlift') {
+                    this.showMessage("✈️ Airlift ativo! Clique em qualquer cidade para se mover", 0x3498db);
+                    this.enableCityClickForMovement();
+                }
+                
+                // Special handling for Government Grant
+                if (card.name === 'Government Grant') {
+                    this.animateResearchStationBuilt(currentPlayer.location);
+                }
+                
+                // Update visual elements that might have changed
+                this.updateCityDisplay();
+                this.updatePlayerPositions();
+            } else {
+                this.showMessage("Não é possível usar esta carta de evento agora", 0xe74c3c);
+            }
+        }
+        
+        enableCityClickForMovement() {
+            // Enable click on all cities for movement
+            this.board.cities.forEach(city => {
+                const citySprite = this.citySprites.get(city.name);
+                if (citySprite && citySprite.container) {
+                    // Add visual indicator that city is clickable
+                    if (!citySprite.airliftGlow) {
+                        citySprite.airliftGlow = this.add.graphics();
+                        citySprite.airliftGlow.lineStyle(4, 0x00ff00, 0.8);
+                        citySprite.airliftGlow.strokeCircle(0, 0, 25);
+                        citySprite.airliftGlow.setDepth(citySprite.container.depth - 1);
+                        citySprite.container.add(citySprite.airliftGlow);
+                        
+                        // Add pulsing animation
+                        this.tweens.add({
+                            targets: citySprite.airliftGlow,
+                            alpha: { from: 0.3, to: 1 },
+                            duration: 1000,
                             ease: 'Sine.easeInOut',
                             yoyo: true,
                             repeat: -1
                         });
                     }
-                } else {
-                    // Normal state
-                    buttonGraphics.clear();
-                    buttonGraphics.fillStyle(0xf39c12); // Normal orange
-                    buttonGraphics.lineStyle(3, 0xffffff); // White border
-                    buttonGraphics.fillRoundedRect(-60, -20, 120, 40, 8);
-                    buttonGraphics.strokeRoundedRect(-60, -20, 120, 40, 8);
                     
-                    // Stop pulsing
-                    if (this.endTurnPulse) {
-                        this.endTurnPulse.destroy();
-                        this.endTurnPulse = null;
-                        this.uiElements.endTurnButton.setScale(1);
-                    }
+                    // Make city clickable
+                    citySprite.container.setInteractive();
+                    citySprite.container.on('pointerdown', () => {
+                        this.movePlayerToCity(city);
+                    });
                 }
+            });
+        }
+        
+        disableCityClickForMovement() {
+            // Remove airlift indicators and click handlers
+            this.board.cities.forEach(city => {
+                const citySprite = this.citySprites.get(city.name);
+                if (citySprite && citySprite.container) {
+                    // Remove glow effect
+                    if (citySprite.airliftGlow) {
+                        citySprite.airliftGlow.destroy();
+                        citySprite.airliftGlow = null;
+                    }
+                    
+                    // Remove click handler
+                    citySprite.container.removeInteractive();
+                    citySprite.container.off('pointerdown');
+                }
+            });
+        }
+        
+        movePlayerToCity(targetCity) {
+            const currentPlayer = this.gameState.getCurrentPlayer();
+            
+            // Check if we have actions remaining
+            if (this.gameState.getActions() <= 0) {
+                this.showMessage("Sem ações restantes!", 0xe74c3c);
+                return;
             }
-
-            onCityClick(city) {
-                this.selectedCity = city;
-                console.log(`Selected city: ${city.name}`);
+            
+            // Attempt to move using role's move method
+            const success = currentPlayer.moveTo(targetCity, this.gameState);
+            
+            if (success) {
+                this.showMessage(`${currentPlayer.name} moveu para ${targetCity.name}`, 0x27ae60);
                 
-                // Highlight selected city
-                this.citySprites.forEach((sprite, cityName) => {
-                    if (cityName === city.name) {
-                        sprite.nameText.setStyle({ backgroundColor: 'rgba(52, 152, 219, 0.8)' });
-                        sprite.container.setScale(1.1);
-                    } else {
-                        sprite.nameText.setStyle({ backgroundColor: 'rgba(0,0,0,0.7)' });
-                        sprite.container.setScale(1);
-                    }
-                });
+                // Update UI
+                this.updatePlayerPositions();
+                this.disableCityClickForMovement();
                 
-                this.showMessage(`Selected: ${city.name}`, 0x3498db);
-            }
-
-            onActionClick(action) {
-                this.selectedAction = action;
-                console.log(`Selected action: ${action}`);
-                
-                const currentPlayer = this.gameState.getCurrentPlayer();
-                
-                switch (action) {
-                    case 'move':
-                        this.showMessage("Drag your player to move or select a city", 0x3498db);
-                        break;
-                        
-                    case 'treat':
-                        if (this.selectedCity) {
-                            this.treatDisease(this.selectedCity);
-                        } else {
-                            this.showMessage("Select a city first", 0xe74c3c);
-                        }
-                        break;
-                        
-                    case 'build':
-                        this.buildResearchStation();
-                        break;
-                        
-                    case 'cure':
-                        this.discoverCure();
-                        break;
-                        
-                    case 'share':
-                        this.showMessage("Share knowledge with other players in same city", 0xf39c12);
-                        break;
-                }
-            }
-
-            treatDisease(city) {
-                if (this.gameState.getActions() <= 0) {
-                    this.showMessage("No actions remaining!", 0xe74c3c);
-                    return;
-                }
-                
-                const success = this.pandemicGame.treatDisease();
-                
-                if (success) {
-                    this.updateCityDiseaseCubes(city);
-                    this.updateHUD();
-                    
-                    const actionsLeft = this.gameState.getActions();
-                    this.showMessage(`Treated disease in ${city.name} (${actionsLeft} actions left)`, 0x27ae60);
-                    
-                    // Show hint when actions are 0
-                    if (actionsLeft === 0) {
-                        setTimeout(() => {
-                            this.showMessage("💡 No actions left! Click END TURN to continue", 0xffeb3b);
-                        }, 2000);
-                    }
-                } else {
-                    this.showMessage("Cannot treat disease here", 0xe74c3c);
-                }
-            }
-
-            buildResearchStation() {
-                if (this.gameState.getActions() <= 0) {
-                    this.showMessage("No actions remaining!", 0xe74c3c);
-                    return;
-                }
-                
-                const success = this.pandemicGame.buildResearchStation();
-                
-                if (success) {
-                    const currentPlayer = this.gameState.getCurrentPlayer();
-                    const citySprite = this.citySprites.get(currentPlayer.location.name);
-                    if (citySprite) {
-                        citySprite.researchStation.setVisible(true);
-                    }
-                    this.updateHUD();
-                    
-                    const actionsLeft = this.gameState.getActions();
-                    this.showMessage(`Built research station in ${currentPlayer.location.name} (${actionsLeft} actions left)`, 0x27ae60);
-                    
-                    // Show hint when actions are 0
-                    if (actionsLeft === 0) {
-                        setTimeout(() => {
-                            this.showMessage("💡 No actions left! Click END TURN to continue", 0xffeb3b);
-                        }, 2000);
-                    }
-                } else {
-                    this.showMessage("Cannot build research station", 0xe74c3c);
-                }
-            }
-
-            discoverCure() {
-                if (this.gameState.getActions() <= 0) {
-                    this.showMessage("No actions remaining!", 0xe74c3c);
-                    return;
-                }
-                
-                const success = this.pandemicGame.discoverCure();
-                
-                if (success) {
-                    this.updateHUD();
-                    
-                    const actionsLeft = this.gameState.getActions();
-                    this.showMessage(`Cure discovered! (${actionsLeft} actions left)`, 0x9b59b6);
-                    
-                    // Check win condition
-                    if (this.gameState.getAllCures().length === 4) {
-                        this.showWinScreen();
-                        return;
-                    }
-                    
-                    // Show hint when actions are 0
-                    if (actionsLeft === 0) {
-                        setTimeout(() => {
-                            this.showMessage("💡 No actions left! Click END TURN to continue", 0xffeb3b);
-                        }, 2000);
-                    }
-                } else {
-                    this.showMessage("Cannot discover cure", 0xe74c3c);
-                }
-            }
-
-            endTurn() {
-                console.log("🔄 endTurn() called - executing phases");
-                
-                try {
-                    // Store current player's hand before phases execute
-                    const currentPlayer = this.gameState.getCurrentPlayer();
-                    const handBefore = [...(currentPlayer.hand || [])];
-                    
-                    // Show phase transition animation with hand state
-                    this.showPhaseTransition(handBefore);
-                    
-                    // Execute the actual game logic
-                    const result = this.pandemicGame.endTurn();
-                    
-                    // Handle game end conditions after animation
+                const actionsLeft = this.gameState.getActions();
+                if (actionsLeft === 0) {
                     setTimeout(() => {
-                        if (result.gameOver) {
-                            if (result.won) {
-                                this.showWinScreen();
-                            } else {
-                                this.showLoseScreen();
-                            }
-                        } else {
-                            // Update all visuals after phases complete
-                            this.updateHUD();
-                            this.updateCurrentPlayerIndicators();
-                            this.updatePlayerCardsDisplay();
-                            
-                            // Update disease cubes
-                            this.board.cities.forEach(city => {
-                                this.updateCityDiseaseCubes(city);
-                            });
-                            
-                            const newPlayer = this.gameState.getCurrentPlayer();
-                            this.showMessage(`${newPlayer.name}'s turn begins!`, 0x27ae60);
-                        }
-                    }, 5000); // Wait for animation to complete (increased for card display)
-                    
-                } catch (error) {
-                    console.error("❌ Error in endTurn():", error);
-                    this.showMessage("Error ending turn!", 0xe74c3c);
+                        this.showMessage("💡 Sem ações restantes! Clique em FINALIZAR TURNO para continuar", 0xffeb3b);
+                    }, 2000);
                 }
+            } else {
+                this.showMessage("Não é possível mover para essa cidade", 0xe74c3c);
             }
+        }
 
-            isCurrentPlayer(player) {
-                return this.gameState.getCurrentPlayer() === player;
-            }
-
-            showPhaseTransition(handBefore = null) {
-                // Use provided hand state or get current state
-                const currentPlayer = this.gameState.getCurrentPlayer();
-                if (!handBefore) {
-                    handBefore = [...(currentPlayer.hand || [])];
+        updateCityDisplay() {
+            // Update research station indicators on cities
+            this.board.cities.forEach(city => {
+                const citySprite = this.citySprites.get(city.name);
+                if (citySprite && citySprite.researchStation) {
+                    citySprite.researchStation.setVisible(city.hasResearchStation);
                 }
+            });
+        }
+        
+        animateResearchStationBuilt(city) {
+            const citySprite = this.citySprites.get(city.name);
+            if (citySprite && citySprite.researchStation) {
+                // Make sure it's visible
+                citySprite.researchStation.setVisible(true);
                 
-                // Create overlay for phase transitions
-                const overlay = this.add.graphics();
-                overlay.fillStyle(0x000000, 0.7);
-                overlay.fillRect(0, 0, 1600, 900);
-                overlay.setDepth(1500);
+                // Create building animation
+                citySprite.researchStation.setScale(0);
+                citySprite.researchStation.setAlpha(0);
                 
-                // Phase transition container
-                const phaseContainer = this.add.container(800, 450);
-                phaseContainer.setDepth(1501);
-                
-                // Background for phase info
-                const phaseBg = this.add.graphics();
-                phaseBg.fillStyle(0x2c3e50, 0.95);
-                phaseBg.lineStyle(3, 0x3498db);
-                phaseBg.fillRoundedRect(-350, -180, 700, 360, 15);
-                phaseBg.strokeRoundedRect(-350, -180, 700, 360, 15);
-                
-                // Phase sequence
-                const infectionRate = this.gameState.getCurrentInfectionRate();
-                
-                const phases = [
-                    { name: 'DRAW PHASE', icon: '🃏', color: '#3498db', description: `${currentPlayer.name} draws 2 cards` },
-                    { name: 'INFECT PHASE', icon: '🦠', color: '#e74c3c', description: `Infecting ${infectionRate} cities` },
-                    { name: 'NEXT TURN', icon: '👤', color: '#27ae60', description: 'Next player begins...' }
-                ];
-                
-                phaseContainer.add(phaseBg);
-                
-                // Title
-                const title = this.add.text(0, -130, '⚡ EXECUTING PHASES', {
-                    fontSize: '24px',
-                    color: '#ffffff',
-                    fontStyle: 'bold'
-                }).setOrigin(0.5);
-                phaseContainer.add(title);
-                
-                // Show each phase with animation
-                let currentPhaseIndex = 0;
-                const phaseText = this.add.text(0, -80, '', {
-                    fontSize: '20px',
-                    color: '#ffffff',
-                    fontStyle: 'bold'
-                }).setOrigin(0.5);
-                
-                const descText = this.add.text(0, -50, '', {
-                    fontSize: '14px',
-                    color: '#95a5a6'
-                }).setOrigin(0.5);
-                
-                // Cards/Cities display container
-                const cardsDisplayContainer = this.add.container(0, 20);
-                phaseContainer.add(cardsDisplayContainer);
-                
-                const progressBar = this.add.graphics();
-                progressBar.lineStyle(4, 0x3498db);
-                progressBar.strokeRect(-300, 130, 600, 10);
-                
-                const progressFill = this.add.graphics();
-                
-                phaseContainer.add([phaseText, descText, progressBar, progressFill]);
-                
-                // Animate through phases (visual only)
-                const showNextPhase = () => {
-                    if (currentPhaseIndex < phases.length) {
-                        const phase = phases[currentPhaseIndex];
-                        
-                        phaseText.setText(`${phase.icon} ${phase.name}`);
-                        phaseText.setColor(phase.color);
-                        descText.setText(phase.description);
-                        
-                        // Clear previous phase content
-                        cardsDisplayContainer.removeAll(true);
-                        
-                        // Special handling for different phases
-                        if (currentPhaseIndex === 0) {
-                            // Draw Phase - show cards
-                            setTimeout(() => {
-                                this.showDrawnCards(cardsDisplayContainer, handBefore);
-                            }, 500);
-                        } else if (currentPhaseIndex === 1) {
-                            // Infect Phase - show infected cities
-                            setTimeout(() => {
-                                this.showInfectedCities(cardsDisplayContainer);
-                            }, 500);
-                        }
-                        
-                        // Update progress bar
-                        progressFill.clear();
-                        progressFill.fillStyle(0x3498db);
-                        const width = ((currentPhaseIndex + 1) / phases.length) * 600;
-                        progressFill.fillRect(-300, 130, width, 10);
-                        
-                        // Scale animation
-                        phaseText.setScale(0.8);
+                this.tweens.add({
+                    targets: citySprite.researchStation,
+                    scale: { from: 0, to: 1.5 },
+                    alpha: { from: 0, to: 1 },
+                    duration: 400,
+                    ease: 'Back.easeOut',
+                    onComplete: () => {
+                        // Settle to normal size
                         this.tweens.add({
-                            targets: phaseText,
+                            targets: citySprite.researchStation,
                             scale: 1,
-                            duration: 300,
-                            ease: 'Back.easeOut'
-                        });
-                        
-                        currentPhaseIndex++;
-                        
-                        // Continue to next phase
-                        this.time.delayedCall(1500, showNextPhase);
-                    } else {
-                        // Fade out overlay
-                        this.tweens.add({
-                            targets: [overlay, phaseContainer],
-                            alpha: 0,
-                            duration: 500,
-                            onComplete: () => {
-                                overlay.destroy();
-                                phaseContainer.destroy();
-                            }
-                        });
-                    }
-                };
-                
-                // Start phase animation
-                showNextPhase();
-            }
-
-            showDrawnCards(container, handBefore) {
-                const currentPlayer = this.gameState.getCurrentPlayer();
-                const handAfter = currentPlayer.hand || [];
-                
-                // Find new cards (simple approach - compare lengths and assume last cards are new)
-                const newCards = handAfter.slice(handBefore.length);
-                
-                if (newCards.length === 0) {
-                    const noCardsText = this.add.text(0, 0, 'No cards drawn', {
-                        fontSize: '14px',
-                        color: '#95a5a6',
-                        fontStyle: 'italic'
-                    }).setOrigin(0.5);
-                    container.add(noCardsText);
-                    return;
-                }
-                
-                // Title for drawn cards
-                const drawnTitle = this.add.text(0, -20, 'Cards Drawn:', {
-                    fontSize: '14px',
-                    color: '#ffffff',
-                    fontStyle: 'bold'
-                }).setOrigin(0.5);
-                container.add(drawnTitle);
-                
-                // Display each drawn card
-                newCards.forEach((card, index) => {
-                    const cardContainer = this.add.container(
-                        (index - (newCards.length - 1) / 2) * 120,
-                        20
-                    );
-                    
-                    // Card background
-                    const cardBg = this.add.graphics();
-                    let cardColor = 0x34495e;
-                    
-                    if (card.type === 'CityCard') {
-                        cardColor = this.diseaseColors[card.color] || 0x34495e;
-                    } else if (card.type === 'EpidemicCard') {
-                        cardColor = 0xe74c3c;
-                    } else if (card.type === 'EventCard') {
-                        cardColor = 0x9b59b6;
-                    }
-                    
-                    cardBg.fillStyle(cardColor, 0.9);
-                    cardBg.lineStyle(3, 0xffffff);
-                    cardBg.fillRoundedRect(-50, -30, 100, 60, 8);
-                    cardBg.strokeRoundedRect(-50, -30, 100, 60, 8);
-                    
-                    // Card name
-                    const cardName = card.name.length > 12 ? card.name.substring(0, 12) + '...' : card.name;
-                    const cardText = this.add.text(0, -10, cardName, {
-                        fontSize: '11px',
-                        color: '#ffffff',
-                        fontStyle: 'bold',
-                        wordWrap: { width: 90 }
-                    }).setOrigin(0.5);
-                    
-                    // Card type
-                    const cardType = this.add.text(0, 8, card.type.replace('Card', ''), {
-                        fontSize: '9px',
-                        color: '#ffffff',
-                        fontStyle: 'italic'
-                    }).setOrigin(0.5);
-                    
-                    cardContainer.add([cardBg, cardText, cardType]);
-                    
-                    // Animate card appearance
-                    cardContainer.setAlpha(0);
-                    cardContainer.setScale(0.5);
-                    
-                    this.tweens.add({
-                        targets: cardContainer,
-                        alpha: 1,
-                        scale: 1,
-                        duration: 400,
-                        delay: index * 200,
-                        ease: 'Back.easeOut'
-                    });
-                    
-                    // Special effect for Epidemic cards
-                    if (card.type === 'EpidemicCard') {
-                        this.tweens.add({
-                            targets: cardContainer,
-                            scale: { from: 1, to: 1.1 },
-                            duration: 300,
-                            delay: (index * 200) + 400,
-                            ease: 'Sine.easeInOut',
-                            yoyo: true,
-                            repeat: 2
-                        });
-                    }
-                    
-                    container.add(cardContainer);
-                });
-            }
-
-            showInfectedCities(container) {
-                // Get infection results from the last infection phase
-                const infectionResults = this.gameState.getLastInfectionResults();
-                
-                if (!infectionResults || infectionResults.length === 0) {
-                    const noInfectionText = this.add.text(0, 0, 'No cities infected', {
-                        fontSize: '14px',
-                        color: '#95a5a6',
-                        fontStyle: 'italic'
-                    }).setOrigin(0.5);
-                    container.add(noInfectionText);
-                    return;
-                }
-                
-                // Title for infected cities
-                const infectedTitle = this.add.text(0, -30, 'Cities Infected:', {
-                    fontSize: '14px',
-                    color: '#ffffff',
-                    fontStyle: 'bold'
-                }).setOrigin(0.5);
-                container.add(infectedTitle);
-                
-                // Display each infected city
-                infectionResults.forEach((result, index) => {
-                    const cityContainer = this.add.container(
-                        (index - (infectionResults.length - 1) / 2) * 140,
-                        15
-                    );
-                    
-                    // City background
-                    const cityBg = this.add.graphics();
-                    const diseaseColor = this.diseaseColors[result.color] || 0xe74c3c;
-                    
-                    cityBg.fillStyle(diseaseColor, 0.8);
-                    cityBg.lineStyle(3, 0xffffff);
-                    cityBg.fillRoundedRect(-60, -35, 120, 70, 8);
-                    cityBg.strokeRoundedRect(-60, -35, 120, 70, 8);
-                    
-                    // City name
-                    const cityName = result.cityName.length > 10 ? result.cityName.substring(0, 10) + '...' : result.cityName;
-                    const cityText = this.add.text(0, -20, cityName, {
-                        fontSize: '12px',
-                        color: '#ffffff',
-                        fontStyle: 'bold'
-                    }).setOrigin(0.5);
-                    
-                    // Infection info
-                    const infectionInfo = this.add.text(0, -5, `+${result.cubesAdded} 🦠`, {
-                        fontSize: '11px',
-                        color: '#ffffff',
-                        fontStyle: 'bold'
-                    }).setOrigin(0.5);
-                    
-                    // Total cubes now
-                    const totalCubes = this.add.text(0, 8, `Total: ${result.totalCubes}`, {
-                        fontSize: '9px',
-                        color: '#ffffff'
-                    }).setOrigin(0.5);
-                    
-                    // Outbreak indicator
-                    if (result.outbreak) {
-                        const outbreakIcon = this.add.text(0, 20, '💥 OUTBREAK!', {
-                            fontSize: '8px',
-                            color: '#ffeb3b',
-                            fontStyle: 'bold'
-                        }).setOrigin(0.5);
-                        cityContainer.add(outbreakIcon);
-                    }
-                    
-                    cityContainer.add([cityBg, cityText, infectionInfo, totalCubes]);
-                    
-                    // Animate city appearance
-                    cityContainer.setAlpha(0);
-                    cityContainer.setScale(0.5);
-                    
-                    this.tweens.add({
-                        targets: cityContainer,
-                        alpha: 1,
-                        scale: 1,
-                        duration: 400,
-                        delay: index * 250,
-                        ease: 'Back.easeOut'
-                    });
-                    
-                    // Special effect for outbreaks
-                    if (result.outbreak) {
-                        this.tweens.add({
-                            targets: cityContainer,
-                            scale: { from: 1, to: 1.15 },
                             duration: 200,
-                            delay: (index * 250) + 400,
-                            ease: 'Sine.easeInOut',
-                            yoyo: true,
-                            repeat: 3
+                            ease: 'Power2.easeOut'
                         });
                     }
+                });
+                
+                // Create construction effect particles
+                for (let i = 0; i < 8; i++) {
+                    const particle = this.add.graphics();
+                    particle.fillStyle(0x27ae60);
+                    particle.fillCircle(0, 0, 4);
+                    particle.setPosition(citySprite.container.x, citySprite.container.y);
+                    particle.setDepth(2000);
                     
-                    container.add(cityContainer);
-                });
-            }
-
-            showMessage(text, color = 0xffffff) {
-                // Remove existing message
-                if (this.currentMessage) {
-                    this.currentMessage.destroy();
+                    const angle = (i / 8) * Math.PI * 2;
+                    const distance = 40;
+                    
+                    this.tweens.add({
+                        targets: particle,
+                        x: citySprite.container.x + Math.cos(angle) * distance,
+                        y: citySprite.container.y + Math.sin(angle) * distance,
+                        alpha: 0,
+                        scale: { from: 1, to: 0.2 },
+                        duration: 800,
+                        ease: 'Power2.easeOut',
+                        onComplete: () => {
+                            particle.destroy();
+                        }
+                    });
                 }
                 
-                this.currentMessage = this.add.text(800, 700, text, {
-                    fontSize: '18px',
-                    color: `#${color.toString(16).padStart(6, '0')}`,
-                    fontStyle: 'bold',
-                    backgroundColor: 'rgba(0,0,0,0.8)',
-                    padding: { x: 15, y: 8 }
-                }).setOrigin(0.5).setDepth(1000);
-                
-                // Fade out after 3 seconds
-                this.time.delayedCall(3000, () => {
-                    if (this.currentMessage) {
-                        this.tweens.add({
-                            targets: this.currentMessage,
-                            alpha: 0,
-                            duration: 500,
-                            onComplete: () => {
-                                if (this.currentMessage) {
-                                    this.currentMessage.destroy();
-                                    this.currentMessage = null;
-                                }
-                            }
-                        });
-                    }
-                });
-            }
-
-            showWinScreen() {
-                const winScreen = this.add.graphics();
-                winScreen.fillStyle(0x000000, 0.8);
-                winScreen.fillRect(0, 0, 1600, 900);
-                winScreen.setDepth(2000);
-                
-                this.add.text(800, 350, '🎉 HUMANITY SAVED! 🎉', {
-                    fontSize: '48px',
-                    color: '#27ae60',
-                    fontStyle: 'bold',
-                    stroke: '#000000',
-                    strokeThickness: 4
-                }).setOrigin(0.5).setDepth(2001);
-                
-                // Show win reason
-                const curesFound = this.gameState.getAllCures().length;
-                this.add.text(800, 430, `Victory Condition: All 4 diseases cured!`, {
-                    fontSize: '24px',
-                    color: '#ffffff',
-                    fontStyle: 'bold'
-                }).setOrigin(0.5).setDepth(2001);
-                
-                this.add.text(800, 470, `✅ Cures discovered: ${curesFound}/4`, {
-                    fontSize: '20px',
-                    color: '#27ae60'
-                }).setOrigin(0.5).setDepth(2001);
-                
-                // Show game stats
-                const turns = this.gameState.currentPlayerIndex + 1;
-                const outbreaks = this.gameState.getOutbreakCount();
-                this.add.text(800, 510, `Game completed in ${turns} player turns with ${outbreaks} outbreaks`, {
-                    fontSize: '16px',
-                    color: '#95a5a6'
-                }).setOrigin(0.5).setDepth(2001);
-                
-                this.add.text(800, 570, 'Click to restart', {
-                    fontSize: '18px',
-                    color: '#95a5a6'
-                }).setOrigin(0.5).setDepth(2001);
-                
-                this.input.once('pointerdown', () => {
-                    this.scene.restart();
-                });
-            }
-
-            showLoseScreen() {
-                const loseScreen = this.add.graphics();
-                loseScreen.fillStyle(0x000000, 0.8);
-                loseScreen.fillRect(0, 0, 1600, 900);
-                loseScreen.setDepth(2000);
-                
-                this.add.text(800, 320, '💀 HUMANITY LOST 💀', {
-                    fontSize: '48px',
-                    color: '#e74c3c',
-                    fontStyle: 'bold',
-                    stroke: '#000000',
-                    strokeThickness: 4
-                }).setOrigin(0.5).setDepth(2001);
-                
-                // Determine and show lose reason
-                const loseReason = this.getLoseReason();
-                this.add.text(800, 400, `Defeat Condition: ${loseReason.title}`, {
-                    fontSize: '24px',
-                    color: '#ffffff',
-                    fontStyle: 'bold'
-                }).setOrigin(0.5).setDepth(2001);
-                
-                this.add.text(800, 440, loseReason.description, {
-                    fontSize: '18px',
-                    color: '#e74c3c'
-                }).setOrigin(0.5).setDepth(2001);
-                
-                // Show game stats
-                this.add.text(800, 480, loseReason.stats, {
-                    fontSize: '16px',
-                    color: '#95a5a6'
-                }).setOrigin(0.5).setDepth(2001);
-                
-                // Show what was achieved
-                const curesFound = this.gameState.getAllCures().length;
-                this.add.text(800, 520, `Progress: ${curesFound}/4 cures discovered`, {
-                    fontSize: '16px',
-                    color: '#f39c12'
-                }).setOrigin(0.5).setDepth(2001);
-                
-                this.add.text(800, 580, 'Click to try again', {
-                    fontSize: '18px',
-                    color: '#95a5a6'
-                }).setOrigin(0.5).setDepth(2001);
-                
-                this.input.once('pointerdown', () => {
-                    this.scene.restart();
-                });
-            }
-
-            getLoseReason() {
-                const outbreaks = this.gameState.getOutbreakCount();
-                const playerDeckSize = this.board.playerDeck?.size() || 0;
-                
-                // Check different lose conditions
-                if (outbreaks >= 8) {
-                    return {
-                        title: "Too Many Outbreaks",
-                        description: "💥 8 outbreaks occurred - pandemic out of control!",
-                        stats: `Final outbreak count: ${outbreaks}/8`
-                    };
-                }
-                
-                if (playerDeckSize === 0) {
-                    return {
-                        title: "Player Deck Exhausted",
-                        description: "📚 No more player cards to draw - time ran out!",
-                        stats: `Player deck cards remaining: ${playerDeckSize}`
-                    };
-                }
-                
-                // Check if any disease cubes are exhausted
-                const diseaseCubeCounts = this.gameState.getDiseaseCubeCounts();
-                const exhaustedColors = [];
-                
-                ['Blue', 'Yellow', 'Black', 'Red'].forEach(color => {
-                    const remaining = diseaseCubeCounts[color] || 0;
-                    if (remaining <= 0) {
-                        exhaustedColors.push(color);
-                    }
-                });
-                
-                if (exhaustedColors.length > 0) {
-                    return {
-                        title: "Disease Cubes Exhausted",
-                        description: `🦠 ${exhaustedColors.join(', ')} disease cubes ran out!`,
-                        stats: `Diseases spread too quickly to contain`
-                    };
-                }
-                
-                // Default lose condition
-                return {
-                    title: "Game Over",
-                    description: "The diseases have spread too far...",
-                    stats: "Multiple lose conditions may have been triggered"
-                };
-            }
-
-            showError(message) {
-                this.add.text(800, 450, `❌ ERROR: ${message}`, {
-                    fontSize: '24px',
-                    color: '#e74c3c',
-                    backgroundColor: 'rgba(0,0,0,0.8)',
-                    padding: { x: 20, y: 10 }
-                }).setOrigin(0.5).setDepth(2000);
-            }
-
-            setupEventHandlers() {
-                // Keyboard shortcuts
-                this.input.keyboard.on('keydown-SPACE', () => {
-                    this.endTurn();
-                });
-                
-                this.input.keyboard.on('keydown-T', () => {
-                    this.onActionClick('treat');
-                });
-                
-                this.input.keyboard.on('keydown-B', () => {
-                    this.onActionClick('build');
-                });
-                
-                this.input.keyboard.on('keydown-C', () => {
-                    this.onActionClick('cure');
-                });
-                
-                this.input.keyboard.on('keydown-S', () => {
-                    this.toggleStatusPanel();
-                });
-                
-                this.input.keyboard.on('keydown-ESC', () => {
-                    if (this.statusPanelExpanded) {
-                        this.toggleStatusPanel();
-                    }
-                });
+                this.showMessage(`🏥 Estação de pesquisa construída em ${city.name}!`, 0x27ae60);
             }
         }
-
-        // Phaser configuration
-        const config = {
-            type: Phaser.AUTO,
-            width: 1600,
-            height: 900,
-            parent: 'game-canvas',
-            backgroundColor: '#2c3e50',
-            scene: PandemicGame,
-            physics: {
-                default: 'arcade',
-                arcade: {
-                    debug: false
+        
+        updatePlayerPositions() {
+            // Update player pawn positions
+            this.gameState.players.forEach((player, index) => {
+                const playerSprite = this.playerSprites[index];
+                if (playerSprite && player.location) {
+                    const citySprite = this.citySprites[player.location.name];
+                    if (citySprite) {
+                        playerSprite.x = citySprite.x + (index * 15) - 15; // Offset multiple players
+                        playerSprite.y = citySprite.y + 25;
+                    }
                 }
-            }
-        };
-
-        // Initialize Phaser game
-        try {
-            const game = new Phaser.Game(config);
-            console.log("✅ Phaser game initialized successfully!");
-        } catch (error) {
-            console.error("❌ Failed to initialize Phaser:", error);
-            document.body.innerHTML = `
-                <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                            background: rgba(231, 76, 60, 0.9); color: white; padding: 30px;
-                            border-radius: 15px; text-align: center; font-family: Arial;">
-                    <h2>🦠 Pandemic - Initialization Error</h2>
-                    <p><strong>Error:</strong> ${error.message}</p>
-                    <p>Please check that all game files are properly loaded.</p>
-                    <button onclick="location.reload()" 
-                            style="padding: 10px 20px; font-size: 16px; margin-top: 15px;
-                                   background: white; color: #e74c3c; border: none; border-radius: 5px; cursor: pointer;">
-                        🔄 Reload Game
-                    </button>
-                </div>
-            `;
+            });
         }
-    </script>
+
+        setupEventHandlers() {
+            // Keyboard shortcuts - according to Pandemic conventions
+            this.input.keyboard.on('keydown-SPACE', () => {
+                // Check if the endTurn has already been called
+                this.endTurn();
+            });
+            
+            this.input.keyboard.on('keydown-ONE', () => {
+                this.onActionClick('treat');
+            });
+            
+            this.input.keyboard.on('keydown-TWO', () => {
+                this.onActionClick('build');
+            });
+            
+            this.input.keyboard.on('keydown-THREE', () => {
+                this.onActionClick('cure');
+            });
+            
+            // Help text
+            console.log("🎮 Atalhos de teclado: SPACE=Finalizar Turno, 1-3=Ações, ESC=Fechar painéis");
+        }
+    }
+
+    // Phaser configuration
+    const config = {
+        type: Phaser.AUTO,
+        width: 1600,
+        height: 900,
+        parent: 'game-canvas',
+        backgroundColor: '#2c3e50',
+        scene: PandemicGame,
+        physics: {
+            default: 'arcade',
+            arcade: {
+                debug: false
+            }
+        }
+    };
+
+    // Initialize Phaser game
+    try {
+        const game = new Phaser.Game(config);
+        console.log("✅ Phaser game inicializado com sucesso!");
+    } catch (error) {
+        console.error("❌ Falha ao inicializar Phaser:", error);
+        document.body.innerHTML = `
+            <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                        background: rgba(231, 76, 60, 0.9); color: white; padding: 30px;
+                        border-radius: 15px; text-align: center; font-family: Arial;">
+                <h2>🦠 Pandemic - Erro de Inicialização</h2>
+                <p><strong>Erro:</strong> ${error.message}</p>
+                <p>Por favor, verifique se todos os arquivos do jogo foram carregados corretamente.</p>
+                <button onclick="location.reload()" 
+                        style="padding: 10px 20px; font-size: 16px; margin-top: 15px;
+                               background: white; color: #e74c3c; border: none; border-radius: 5px; cursor: pointer;">
+                    🔄 Recarregar Jogo
+                </button>
+            </div>
+        `;
+    }
+</script>
 </body>
 </html> 

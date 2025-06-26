@@ -34,8 +34,8 @@ class EpidemicCard extends Card {
     infect(board) {
         const bottomCard = board.infectionDeck.drawBottom();
         if (bottomCard && bottomCard.city) {
-            board.infect(bottomCard.city, 3);
-            console.log(`Epidemic infection: 3 cubes placed in ${bottomCard.city.name}`);
+            board.infect(bottomCard.city, 2);
+            console.log(`Epidemic infection: 2 cubes placed in ${bottomCard.city.name}`);
         }
     }
     
@@ -87,8 +87,8 @@ class EventCard extends Card {
     }
     
     resilientPopulation(board) {
-        if (board.infectionDiscardDeck.cards.length > 0) {
-            const removedCard = board.infectionDiscardDeck.cards.pop();
+        if (board.infectionDeck.discardPile.length > 0) {
+            const removedCard = board.infectionDeck.discardPile.pop();
             console.log(`${removedCard.name} removed from infection discard pile`);
             return true;
         }
@@ -124,5 +124,58 @@ class EventCard extends Card {
             const j = Math.floor(Math.random() * (i + 1));
             [array[i], array[j]] = [array[j], array[i]];
         }
+    }
+}
+
+// Specific Event Card classes
+class AirliftCard extends EventCard {
+    constructor() {
+        super("Airlift", "Move any pawn to any city");
+    }
+    
+    useEvent(gameState, board) {
+        // Activate airlift mode - next movement can be to any city
+        gameState.activateAirlift();
+        console.log("Airlift card used - next movement can be to any city");
+        return true;
+    }
+}
+
+class OneQuietNightCard extends EventCard {
+    constructor() {
+        super("One Quiet Night", "Skip the next Infect Cities step");
+    }
+    
+    useEvent(gameState, board) {
+        gameState.skipNextInfection = true;
+        console.log("Next infection phase will be skipped");
+        return true;
+    }
+}
+
+class GovernmentGrantCard extends EventCard {
+    constructor() {
+        super("Government Grant", "Add 1 research station to any city");
+    }
+    
+    useEvent(gameState, board) {
+        // Build research station in current player's location
+        const currentPlayer = gameState.getCurrentPlayer();
+        const currentCity = currentPlayer.location;
+        
+        if (currentCity && !currentCity.hasResearchStation) {
+            currentCity.hasResearchStation = true;
+            gameState.researchStationCount = (gameState.researchStationCount || 0) + 1;
+            console.log(`Research station built in ${currentCity.name} via Government Grant`);
+            return true;
+        }
+        
+        if (currentCity && currentCity.hasResearchStation) {
+            console.log(`${currentCity.name} already has a research station`);
+            return false;
+        }
+        
+        console.log("Cannot build research station - invalid location");
+        return false;
     }
 } 

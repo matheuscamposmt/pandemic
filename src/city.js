@@ -19,26 +19,32 @@ class City {
     }
     
     addInfection(cubes = 1, gameState = null) {
-        const currentInfections = this.infections.get(this.color) || 0;
+        const currentTotal = this.getInfectionCount(this.color);
         
-        // Check if adding cubes would cause outbreak
-        if (currentInfections + cubes > 3) {
-            // Set to max (3) and trigger outbreak
-            this.infections.set(this.color, 3);
-            
-            // Only trigger outbreak if we weren't already at 3 cubes
-            if (currentInfections < 3 && gameState && gameState.board) {
-                console.log(`🦠 ${this.name} overflowing: ${currentInfections} + ${cubes} > 3, triggering outbreak`);
-                gameState.board.outbreak(this, gameState);
-            }
-            
-            return false; // Indicates outbreak occurred
+        // Check if Medic prevents this infection (for cured diseases)
+        if (gameState && this.checkMedicPrevention(this.color, gameState)) {
+            return true; // Infection prevented
         }
         
-        // Add cubes normally
-        this.infections.set(this.color, currentInfections + cubes);
-        console.log(`🦠 Added ${cubes} ${this.color} cube(s) to ${this.name} (now ${currentInfections + cubes})`);
-        return true;
+        if (currentTotal + cubes > 3) {
+            // This would cause an outbreak
+            const actualCubes = 3 - currentTotal;
+            if (actualCubes > 0) {
+                this.infections.set(this.color, 3);
+                console.log(`⚠️ ${this.name} reached infection limit, adding ${actualCubes} cubes then outbreak`);
+            }
+            
+            // Trigger outbreak
+            if (gameState && gameState.board) {
+                gameState.board.outbreak(this, gameState);
+            }
+            return false; // Indicates outbreak occurred
+        } else {
+            // Normal infection - add cubes
+            this.infections.set(this.color, currentTotal + cubes);
+            console.log(`🦠 ${this.name} infected: +${cubes} ${this.color} cubes (total: ${currentTotal + cubes})`);
+            return true;
+        }
     }
     
     removeInfection(color, cubes = 1) {
@@ -116,6 +122,22 @@ class City {
         if (this.hasResearchStation) {
             this.hasResearchStation = false;
             console.log(`Research station removed from ${this.name}`);
+            return true;
+        }
+        return false;
+    }
+    
+    checkMedicPrevention(color, gameState) {
+        if (!gameState.hasCure(color)) return false;
+        
+        // Find medic
+        const medic = gameState.players.find(p => p.role.constructor.name === 'Medic');
+        if (!medic) return false;
+        
+        // Check if medic is in this city or adjacent
+        if (medic.location === this || 
+            (this.neighbors && this.neighbors.includes(medic.location))) {
+            console.log(`🛡️ Medic prevents ${color} infection in ${this.name} (disease cured)`);
             return true;
         }
         return false;

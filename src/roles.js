@@ -8,9 +8,15 @@ class Role {
     
     move(player, targetCity, gameState) {
         // Default movement logic
-        if (this.canMoveToCity(player, targetCity)) {
+        if (this.canMoveToCity(player, targetCity) || gameState.airliftEvent) {
             player.location = targetCity;
             console.log(`${player.name} moved to ${targetCity.name}`);
+            
+            // If airlift was used, deactivate it after movement
+            if (gameState.airliftEvent) {
+                gameState.deactivateAirlift();
+            }
+            
             return true;
         }
         return false;
@@ -52,10 +58,7 @@ class Role {
         return "gray"; // Default color
     }
     
-    useAbility() {
-        // To be overridden by specific roles
-        console.log("Using default ability");
-    }
+
 }
 
 class Scientist extends Role {
@@ -67,30 +70,64 @@ class Scientist extends Role {
         return "white";
     }
     
-    useAbility() {
-        console.log("Scientist: Need only 4 cards to discover cure");
-    }
 }
 
 class Medic extends Role {
     treat(player, gameState, board) {
-        if (player.location.hasInfection()) {
-            // Medic removes all cubes of one color
-            for (let color of ['Blue', 'Yellow', 'Black', 'Red']) {
-                if (player.location.hasInfection(color)) {
-                    const count = player.location.getInfectionCount(color);
+        if (!player.location.hasInfection()) {
+            return false;
+        }
+        
+        // Medic removes all cubes of one color at a time
+        for (let color of ['Blue', 'Yellow', 'Black', 'Red']) {
+            if (player.location.hasInfection(color)) {
+                const count = player.location.getInfectionCount(color);
+                if (count > 0) {
+                    // Remove all cubes of this color
                     const removed = player.location.removeInfection(color, count);
                     if (removed > 0) {
                         gameState.incrementCubes(color, removed);
-                        console.log(`${player.name} (Medic) treated all ${color} disease in ${player.location.name}`);
-                        
-                        // Auto-prevent cured diseases
-                        if (gameState.curedDiseases.has(color)) {
-                            console.log(`Medic prevents future ${color} infections`);
-                        }
+                        console.log(`${player.name} (Medic) treated all ${removed} ${color} cubes in ${player.location.name}`);
                         return true;
                     }
                 }
+            }
+        }
+        return false;
+    }
+    
+    // Medic automatically treats cured diseases when entering a city
+    move(player, targetCity, gameState) {
+        const success = super.move(player, targetCity, gameState);
+        if (success) {
+            this.autoTreatCuredDiseases(player, gameState);
+        }
+        return success;
+    }
+    
+    autoTreatCuredDiseases(player, gameState) {
+        // Automatically treat all cubes of cured diseases in current location
+        for (let color of ['Blue', 'Yellow', 'Black', 'Red']) {
+            if (gameState.hasCure(color) && player.location.hasInfection(color)) {
+                const count = player.location.getInfectionCount(color);
+                if (count > 0) {
+                    const removed = player.location.removeInfection(color, count);
+                    gameState.incrementCubes(color, removed);
+                    console.log(`🏥 Medic auto-treated ${removed} ${color} cubes (disease cured)`);
+                }
+            }
+        }
+    }
+    
+    // Prevent placement of cured disease cubes in Medic's location and adjacent cities
+    preventsInfection(city, color, gameState) {
+        if (gameState.hasCure(color)) {
+            // Check if medic is in this city or adjacent
+            const medic = gameState.players.find(p => p.role instanceof Medic);
+            if (medic && (medic.location === city || 
+                         (city.neighbors && city.neighbors.includes(medic.location)))) {
+                console.log(`🛡️ Medic prevents ${color} infection in ${city.name}`);
+                return true;
             }
         }
         return false;
@@ -100,21 +137,36 @@ class Medic extends Role {
         return "orange";
     }
     
-    useAbility() {
-        console.log("Medic: Remove all cubes of one color when treating, prevent placing cured disease cubes");
-    }
 }
 
 class Researcher extends Role {
-    shareKnowledge(player, otherPlayer, cardName) {
-        // Researcher can give any card (not just matching city)
-        if (player.location === otherPlayer.location) {
-            const card = player.discard(cardName);
-            if (card && otherPlayer.draw(card)) {
-                console.log(`${player.name} (Researcher) gave ${cardName} to ${otherPlayer.name}`);
-                return true;
-            }
-            if (card) player.hand.push(card);
+    shareKnowledge(player, otherPlayer, cardName, gameState) {
+        // Researcher can give any city card (not just matching city)
+        if (player.location !== otherPlayer.location) {
+            console.log("Players must be in the same city to share knowledge");
+            return false;
+        }
+        
+        const card = player.hand.find(c => c.name === cardName);
+        if (!card) {
+            console.log(`${player.name} doesn't have card ${cardName}`);
+            return false;
+        }
+        
+        // Researcher can only give city cards, not event cards or epidemic cards
+        if (card.type !== 'CityCard') {
+            console.log("Researcher can only share city cards");
+            return false;
+        }
+        
+        const discardedCard = player.discard(cardName);
+        if (discardedCard && otherPlayer.addCard(discardedCard)) {
+            console.log(`${player.name} (Researcher) gave ${cardName} to ${otherPlayer.name}`);
+            return true;
+        }
+        
+        if (discardedCard) {
+            player.hand.push(discardedCard); // Return card if transfer failed
         }
         return false;
     }
@@ -123,9 +175,6 @@ class Researcher extends Role {
         return "brown";
     }
     
-    useAbility() {
-        console.log("Researcher: Can give any city card to other players in same city");
-    }
 }
 
 class Dispatcher extends Role {
@@ -149,88 +198,4 @@ class Dispatcher extends Role {
         return "purple";
     }
     
-    useAbility() {
-        console.log("Dispatcher: Move other players' pawns or move any pawn to a city with another pawn");
-    }
 }
-
-class OperationsExpert extends Role {
-    buildResearchStation(player, city) {
-        // Can build without discarding city card
-        if (player.location === city) {
-            city.hasResearchStation = true;
-            console.log(`${player.name} (Operations Expert) built research station in ${city.name} without discarding card`);
-            return true;
-        }
-        return false;
-    }
-    
-    move(player, targetCity, gameState) {
-        // Can move from research station to any city by discarding any card
-        if (player.location.hasResearchStation && player.hand.length > 0) {
-            const anyCard = player.hand[0];
-            player.discard(anyCard.name);
-            player.location = targetCity;
-            console.log(`${player.name} (Operations Expert) flew to ${targetCity.name}`);
-            return true;
-        }
-        return super.move(player, targetCity, gameState);
-    }
-    
-    getColor() {
-        return "green";
-    }
-    
-    useAbility() {
-        console.log("Operations Expert: Build research station without city card, fly anywhere from research station");
-    }
-}
-
-class QuarantineSpecialist extends Role {
-    preventInfection(city) {
-        // Prevents outbreaks and infections in current city and adjacent cities
-        return true;
-    }
-    
-    getColor() {
-        return "darkgreen";
-    }
-    
-    useAbility() {
-        console.log("Quarantine Specialist: Prevent disease cube placement and outbreaks in current and adjacent cities");
-    }
-}
-
-class ContingencyPlanner extends Role {
-    constructor() {
-        super();
-        this.storedEventCard = null;
-    }
-    
-    storeEventCard(eventCard) {
-        if (!this.storedEventCard) {
-            this.storedEventCard = eventCard;
-            console.log(`${eventCard.name} stored by Contingency Planner`);
-            return true;
-        }
-        return false;
-    }
-    
-    playStoredEvent() {
-        if (this.storedEventCard) {
-            const card = this.storedEventCard;
-            this.storedEventCard = null;
-            console.log(`Contingency Planner played stored ${card.name}`);
-            return card;
-        }
-        return null;
-    }
-    
-    getColor() {
-        return "cyan";
-    }
-    
-    useAbility() {
-        console.log("Contingency Planner: Store one event card and play it later");
-    }
-} 

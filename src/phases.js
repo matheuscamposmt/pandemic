@@ -12,6 +12,11 @@ class TurnPhase extends Phase {
             return new DrawPhase();
         }
         
+        // Clear infection results at the start of a new turn
+        if (gameState.actionsRemaining === 4) {
+            gameState.clearInfectionResults();
+        }
+        
         console.log(`🎮 Turn phase continuing - ${gameState.actionsRemaining} actions remaining`);
         return this;
     }
@@ -53,55 +58,105 @@ class TurnPhase extends Phase {
 
 class DrawPhase extends Phase {
     execute(gameState) {
+        gameState.clearInfectionResults();
         console.log("📥 DRAW PHASE: Drawing 2 player cards");
         
         const currentPlayer = gameState.getCurrentPlayer();
-        const handBefore = currentPlayer.hand.length;
+        console.log("CURRENT PLAYER IS: " + currentPlayer.name);
         
         gameState.drawPlayerCards(2);
         
-        const handAfter = currentPlayer.hand.length;
-        const cardsDrawn = handAfter - handBefore;
-        
-        console.log(`${currentPlayer.name} drew ${cardsDrawn} cards (hand: ${handAfter}/7)`);
-        
-        // Check hand limit
-        if (currentPlayer.hand.length > 7) {
-            console.log(`⚠️ ${currentPlayer.name} has ${currentPlayer.hand.length} cards, must discard to 7`);
-            // TODO: Implement discard logic
-        }
+        // Enforce hand limit after drawing
+        gameState.enforceHandLimit(currentPlayer);
         
         console.log("Draw phase complete, moving to infect phase");
         return new InfectPhase();
+    }
+    
+    handleEpidemic(gameState) {
+        console.log("💥 EPIDEMIC EVENT TRIGGERED!");
+        
+        // 1. Increase infection rate
+        const oldRate = gameState.getCurrentInfectionRate();
+        gameState.increaseInfectionRate();
+        const newRate = gameState.getCurrentInfectionRate();
+        console.log(`📈 Infection rate increased: ${oldRate} → ${newRate}`);
+        
+        // 2. Draw bottom card from infection deck and infect with 3 cubes
+        const bottomCard = gameState.infectionDeck.drawBottom();
+        if (bottomCard && bottomCard.city) {
+            console.log(`🦠 Epidemic infection: ${bottomCard.city.name} gets 3 cubes`);
+            gameState.board.infect(bottomCard.city, 3, gameState);
+        }
+        
+        // 3. Intensify - shuffle infection discard pile and place on top
+        gameState.infectionDeck.intensify();
+        console.log("🔄 Infection deck intensified");
     }
 }
 
 class InfectPhase extends Phase {
     execute(gameState) {
-        const currentRate = gameState.getCurrentInfectionRate();
-        console.log(`🦠 INFECT PHASE: Drawing ${currentRate} infection cards`);
-        
-        const infectedCitiesBefore = gameState.board.getInfectedCities().length;
-        
-        gameState.drawInfectionCards(currentRate);
-        
-        const infectedCitiesAfter = gameState.board.getInfectedCities().length;
-        const newInfections = infectedCitiesAfter - infectedCitiesBefore;
-        
-        if (newInfections > 0) {
-            console.log(`💀 ${newInfections} new cities infected`);
+        // Check if infection should be skipped (One Quiet Night effect)
+        console.log(`🌙 Checking One Quiet Night flag: ${gameState.skipNextInfection}`);
+        if (gameState.skipNextInfection) {
+            gameState.skipNextInfection = false; // Reset the flag
+            
+            // Keep epidemic results but clear normal infection results
+            gameState.lastInfectionResults = [];
+            
+            gameState.nextPlayer();
+            return new TurnPhase();
         }
         
-        // Check lose conditions
+        const currentRate = gameState.getCurrentInfectionRate();
+        
+        // Clear previous normal infection results (but preserve epidemic results)
+        
+        // Draw infection cards based on current rate
+        for (let i = 0; i < currentRate; i++) {
+            const card = gameState.infectionDeck.draw();
+            if (card && card.city) {
+                const cubesBefore = card.city.getInfectionCount(card.city.color);
+                const outbreaksBefore = gameState.getOutbreakCount();
+                
+                // Check if infection would be prevented (e.g., by Medic + cured disease)
+                const infectionPrevented = gameState.hasCure(card.city.color) && 
+                    card.city.checkMedicPrevention(card.city.color, gameState);
+                
+                const success = gameState.board.infect(card.city, 1, gameState);
+                const cubesAfter = card.city.getInfectionCount(card.city.color);
+                const outbreaksAfter = gameState.getOutbreakCount();
+                
+                const actualCubesAdded = cubesAfter - cubesBefore;
+                const outbreakOccurred = outbreaksAfter > outbreaksBefore;
+                
+                let displayCubes = actualCubesAdded;
+                if (infectionPrevented) {
+                    displayCubes = 0;
+                }
+                
+                gameState.lastInfectionResults.push({
+                    cityName: card.city.name,
+                    color: card.city.color,
+                    cubesAdded: displayCubes,
+                    totalCubes: cubesAfter,
+                    outbreak: outbreakOccurred,
+                    prevented: infectionPrevented
+                });
+                
+                console.log(`🦠 Infection result: ${card.city.name} - Before: ${cubesBefore}, After: ${cubesAfter}, Added: ${displayCubes}, Outbreak: ${outbreakOccurred}, Prevented: ${infectionPrevented}`);
+            }
+        }
+        
+        // Check lose conditions after infection
         if (gameState.checkLoseCondition()) {
-            console.log("💀 GAME OVER: Lose condition triggered during infection phase");
             gameState.gameOver = true;
             return this;
         }
         
-        // Move to next player
+        // Move to next player AFTER infection phase
         gameState.nextPlayer();
-        console.log("Infect phase complete, starting next player's turn");
         return new TurnPhase();
     }
 } 

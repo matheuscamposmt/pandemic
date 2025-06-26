@@ -1,4 +1,3 @@
-
 class Deck {
     constructor(cards = []) {
         this.cards = [...cards];
@@ -37,25 +36,28 @@ class PlayerDeck extends Deck {
         super(cards);
     }
     
+    addEventCards() {
+        const eventCards = [
+            new AirliftCard(),
+            new OneQuietNightCard(),
+            new GovernmentGrantCard()
+        ];
+        
+        this.cards.push(...eventCards);
+        this.shuffle();
+        console.log("Added 3 Event Cards to player deck");
+    }
+    
     addEpidemicCards(numberOfEpidemicCards) {
-        // Split deck into equal piles and add epidemic cards
         const pileSize = Math.floor(this.cards.length / numberOfEpidemicCards);
         const newDeck = [];
         
         for (let i = 0; i < numberOfEpidemicCards; i++) {
             const startIndex = i * pileSize;
             const endIndex = (i === numberOfEpidemicCards - 1) ? this.cards.length : (i + 1) * pileSize;
-            
-            // Get pile
             const pile = this.cards.slice(startIndex, endIndex);
-            
-            // Add epidemic card to pile
             pile.push(new EpidemicCard());
-            
-            // Shuffle pile
             this.shufflePile(pile);
-            
-            // Add to new deck
             newDeck.push(...pile);
         }
         

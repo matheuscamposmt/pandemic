@@ -64,19 +64,6 @@ class Game {
         return false;
     }
     
-    shareKnowledge(otherPlayerName, cardName) {
-        const currentPlayer = this.gameState.getCurrentPlayer();
-        const otherPlayer = this.gameState.players.find(p => p.name === otherPlayerName);
-        
-        if (!otherPlayer) {
-            console.log(`Player ${otherPlayerName} not found`);
-            return false;
-        }
-        
-        const success = currentPlayer.shareKnowledge(otherPlayer, cardName);
-        return success;
-    }
-    
     // Game flow
     endTurn() {
         console.log(`${this.gameState.getCurrentPlayer().name} ending turn`);

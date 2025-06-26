@@ -31,33 +31,60 @@ class Board {
     }
     
     setupDecks() {
-        // Create player deck with city cards only
+        // Create player deck with city cards AND Event Cards (following official rules)
         const cityCards = this.cities.map(city => new CityCard(city.name, city.color, city));
         this.playerDeck = new PlayerDeck(cityCards);
         
-        // Add epidemic cards properly distributed
-        this.playerDeck.addEpidemicCards(5); // 5 epidemic cards for standard difficulty
+        // Add Event Cards BEFORE initial distribution (official rules)
+        this.playerDeck.addEventCards();
+        
+        // Initialize discard deck for player cards
+        this.discardDeck = new DiscardDeck();
         
         // Create infection deck with city cards (for infection purposes)
         const infectionCards = this.cities.map(city => new CityCard(city.name, city.color, city));
         this.infectionDeck = new InfectionDeck(infectionCards);
         
-        console.log(`Decks created: ${cityCards.length} city cards, 5 epidemic cards, ${infectionCards.length} infection cards`);
+        // Initialize infection discard deck
+        this.infectionDiscardDeck = new InfectionDiscardDeck();
+        
+        console.log(`Decks created: ${cityCards.length} city cards + 3 event cards, ${infectionCards.length} infection cards`);
+    }
+    
+    
+    getEpidemicCountForDifficulty() {
+        const difficulty = this.gameState?.difficulty || 'Normal';
+        switch(difficulty.toLowerCase()) {
+            case 'introductory': return 4;
+            case 'normal': return 5;
+            case 'heroic': return 6;
+            default: return 5;
+        }
     }
     
     setupInitialInfections() {
-        // Draw 9 infection cards for initial setup
-        // 3 cities get 3 cubes, 3 cities get 2 cubes, 3 cities get 1 cube
-        const infectionLevels = [3, 3, 3, 2, 2, 2, 1, 1, 1];
+        const infectionLevels = [2, 2, 1, 1];
         
-        for (let level of infectionLevels) {
+        console.log("🦠 Setting up initial infections (simplified map)...");
+        
+        for (let i = 0; i < infectionLevels.length; i++) {
+            const level = infectionLevels[i];
             const card = this.infectionDeck.draw();
             if (card && card.city) {
-                this.infect(card.city, level, this.gameState);
+                console.log(`🦠 Initial infection: ${card.city.name} gets ${level} ${card.city.color} cubes`);
+                // For initial setup, directly add cubes without triggering outbreaks
+                this.addInitialInfection(card.city, card.city.color, level);
             }
         }
         
-        console.log("Initial infections placed");
+        console.log("✅ Initial infections placed (4 cities infected, 4 cities clean)");
+    }
+    
+    addInitialInfection(city, color, cubes) {
+        // Add infection cubes directly during initial setup (no outbreaks)
+        city.infections.set(color, Math.min(3, cubes));
+        this.gameState.decrementCubes(color, Math.min(3, cubes));
+        console.log(`  → ${city.name}: ${Math.min(3, cubes)} ${color} cubes`);
     }
     
     findCityByName(name) {

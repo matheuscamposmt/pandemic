@@ -1,140 +1,103 @@
-# Pandemic Game
+# Pandemic Game - Versão Simplificada
 
-Uma implementação do jogo de tabuleiro cooperativo Pandemic seguindo padrões de design e arquitetura orientada a objetos.
+Este é um jogo digital baseado no jogo de tabuleiro **Pandemic** de Matt Leacock, implementado como uma versão cooperativa simplificada para 2-4 jogadores.
 
-## Arquitetura
+## 🎯 Objetivo do Jogo
 
-A implementação segue o diagrama UML fornecido e utiliza vários padrões de design:
+Trabalhe em equipe para descobrir as curas das **4 doenças** antes que uma das condições de derrota ocorra:
+- 8 ou mais surtos
+- Esgotamento do baralho de jogadores  
+- Esgotamento de cubos de doenças
 
-### Padrões de Design Implementados
+## 🗺️ Mapa Simplificado
 
-#### 1. **Facade Pattern**
-- **Classe**: `Game`
-- **Propósito**: Fornece uma interface simplificada para o sistema complexo do jogo
-- **Métodos principais**: `startGame()`, `endTurn()`, `checkWinCondition()`, `checkLoseCondition()`
+O jogo utiliza um mapa mundial reduzido com **8 cidades estratégicas**:
 
-#### 2. **State Pattern**
-- **Classes**: `Phase` (base), `TurnPhase`, `DrawPhase`, `InfectPhase`
-- **Propósito**: Gerencia as diferentes fases de cada turno do jogo
-- **Fluxo**: Turno → Compra → Infecção → Próximo Jogador
+### Regiões:
+- **Américas (Azul)**: Atlanta, New York
+- **América do Sul (Amarelo)**: São Paulo  
+- **Europa/África (Preto)**: London, Paris, Cairo
+- **Ásia (Vermelho)**: Mumbai, Tokyo
 
-#### 3. **Strategy Pattern**
-- **Classes**: `Role` (base) e suas especializações (`Scientist`, `Medic`, `Researcher`, etc.)
-- **Propósito**: Define diferentes habilidades especiais para cada papel de jogador
-- **Comportamentos**: Movimento, tratamento de doenças, descoberta de curas
+### Conexões:
+- Atlanta ↔ New York, São Paulo
+- New York ↔ London, Tokyo (trans-oceânicas)
+- São Paulo ↔ Cairo (trans-atlântica)
+- London ↔ Paris, Mumbai
+- Paris ↔ Cairo, Tokyo
+- Cairo ↔ Mumbai
+- Mumbai ↔ Tokyo
 
-### Estrutura de Classes
+## 👥 Papéis dos Jogadores
 
-#### Core do Jogo
-- `Game` (Facade): Interface principal
-- `GameState`: Gerencia estado centralizado do jogo
-- `Board`: Gerencia tabuleiro, cidades e baralhos
-- `Player`: Representa jogadores com papéis específicos
+Cada jogador possui um papel com habilidades especiais:
 
-#### Sistema de Cartas
-- `Card` (base): Classe abstrata para todas as cartas
-- `CityCard`: Cartas de cidade para movimento e curas
-- `EpidemicCard`: Cartas que aumentam a propagação das doenças
-- `EventCard`: Cartas especiais com habilidades únicas
+- `Scientist`: Precisa apenas de 4 cartas para descobrir curas
+- `Medic`: Remove todos os cubos de uma cor ao tratar, previne doenças curadas
+- `Researcher`: Pode dar qualquer carta de cidade para outros jogadores
+- `Dispatcher`: Pode mover outros jogadores
 
-#### Sistema de Baralhos
-- `Deck` (base): Funcionalidades básicas de baralho
-- `PlayerDeck`: Baralho dos jogadores com cartas de cidade, evento e epidemia
-- `InfectionDeck`: Baralho de infecção para espalhar doenças
-- `DiscardDeck` e `InfectionDiscardDeck`: Pilhas de descarte
+## 🎮 Como Jogar
 
-#### Papéis dos Jogadores (Strategy)
-- `Scientist`: Precisa apenas 4 cartas para descobrir curas
-- `Medic`: Remove todos os cubos de uma cor ao tratar doenças
-- `Researcher`: Pode dar qualquer carta para outros jogadores
-- `Dispatcher`: Pode mover outros peões
-- `OperationsExpert`: Constrói estações sem cartas
-- `QuarantineSpecialist`: Previne infecções em áreas adjacentes
-- `ContingencyPlanner`: Armazena e reutiliza cartas de evento
+### Fases do Turno:
+1. **Realizar 4 ações** (mover, tratar, construir, curar, compartilhar)
+2. **Comprar 2 cartas** do baralho de jogadores
+3. **Infectar cidades** baseado na taxa atual de infecção
 
-## Regras do Jogo
+### Ações Disponíveis:
+- **Drive/Ferry**: Mover para cidade adjacente
+- **Treat Disease**: Remover cubos de doença da cidade atual
+- **Build Station**: Construir estação de pesquisa (requer carta da cidade)
+- **Discover Cure**: Descobrir cura (5 cartas da mesma cor em estação)
+- **Share Knowledge**: Compartilhar cartas com outros jogadores
 
-### Objetivo
-Trabalhar em equipe para descobrir curas para as 4 doenças antes que se espalhem pelo mundo.
+### Controles:
+- **Mouse**: Clique e arraste para mover jogadores
+- **Teclado**: 
+  - `ESPAÇO`: Terminar turno
+  - `1-5`: Ações rápidas
+  - `S`: Abrir/fechar painel de status
+  - `ESC`: Fechar painéis
 
-### Condições de Vitória
-- Descobrir curas para todas as 4 doenças (azul, amarela, preta, vermelha)
+## 🦠 Mecânicas de Doença
 
-### Condições de Derrota
-- 8 ou mais surtos ocorrem
-- Não há cubos suficientes para colocar no tabuleiro
-- O baralho de jogadores se esgota
+### Infecção:
+- Cada cidade pode ter até 3 cubos de doença de sua cor
+- 4+ cubos causam **surtos** que se espalham para cidades vizinhas
+- Cartas de epidemia aumentam a taxa de infecção e intensificam o deck
 
-### Estrutura do Turno
-1. **Fase de Ações**: 4 ações por turno
-   - Movimento (dirigir, voo direto, voo fretado, voo shuttle)
-   - Tratar doença
-   - Construir estação de pesquisa
-   - Compartilhar conhecimento
-   - Descobrir cura
+### Curas e Erradicação:
+- **Cura**: Descoberta com 5 cartas da mesma cor em uma estação
+- **Erradicação**: Ocorre quando uma doença curada não tem mais cubos no tabuleiro
 
-2. **Fase de Compra**: Comprar 2 cartas do baralho
-   - Cartas de cidade para movimento e curas
-   - Cartas de evento para habilidades especiais
-   - Cartas de epidemia que espalham doenças
+## 🏆 Condições de Vitória/Derrota
 
-3. **Fase de Infecção**: Infectar cidades baseado na taxa atual
-   - Colocar cubos de doença nas cidades reveladas
-   - Surtos ocorrem quando uma cidade tem mais de 3 cubos
+### Vitória:
+- Descobrir curas para as **4 doenças**
 
-## Como Jogar
+### Derrota:
+- **8 ou mais surtos** ocorrem
+- **Baralho de jogadores** se esgota
+- **Cubos de doença** de qualquer cor se esgotam
 
-1. Abra `index.html` em um navegador web
-2. Selecione o número de jogadores (2-4)
-3. Escolha a dificuldade:
-   - Fácil: 4 cartas de epidemia
-   - Médio: 5 cartas de epidemia
-   - Difícil: 6 cartas de epidemia
-4. Clique nas cidades para realizar ações
-5. Trabalhe em equipe para descobrir todas as curas!
+## 🎲 Níveis de Dificuldade
 
-## Estrutura de Arquivos
+- **Introdutório**: 4 cartas de epidemia
+- **Normal**: 5 cartas de epidemia  
+- **Heroico**: 6 cartas de epidemia
 
-```
-├── src/
-│   ├── game.js           # Facade principal
-│   ├── gameState.js      # Estado centralizado
-│   ├── board.js          # Gerenciamento do tabuleiro
-│   ├── phases.js         # State pattern para fases
-│   ├── player.js         # Classe jogador
-│   ├── roles.js          # Strategy pattern para papéis
-│   ├── cards.js          # Hierarquia de cartas
-│   ├── decks.js          # Sistema de baralhos
-│   ├── city.js           # Representação das cidades
-│   └── ...               # Outros arquivos de suporte
-├── index.html            # Página principal
-├── style.css             # Estilos
-└── README.md             # Este arquivo
-```
+## 📋 Implementação Técnica
 
-## Melhorias Implementadas
+### Padrões de Design:
+- **Facade**: `Game` classe principal
+- **State**: `GameState` gerencia o estado do jogo
+- **Strategy**: `Role` classes definem habilidades especiais
 
-### Comparado à Versão Original:
-1. **Arquitetura Clara**: Separação de responsabilidades seguindo UML
-2. **Padrões de Design**: Facade, State, Strategy implementados
-3. **Manutenibilidade**: Código mais organizado e extensível
-4. **Escalabilidade**: Fácil adição de novos papéis, cartas e mecânicas
-5. **Legibilidade**: Estrutura mais clara e documentada
-
-### Funcionalidades Adicionais:
-- Sistema completo de papéis com habilidades especiais
-- Cartas de evento funcionais
-- Fases de turno bem definidas
-- Melhor gerenciamento de estado
-- Interface de usuário aprimorada
-
-## Tecnologias Utilizadas
-
+### Tecnologias:
+- **Phaser 3**: Engine de jogos
 - **JavaScript ES6+**: Linguagem principal
-- **HTML5 Canvas**: Renderização do jogo
-- **CSS3**: Estilização da interface
-- **Padrões de Design OOP**: Facade, State, Strategy
+- **HTML5 Canvas**: Renderização gráfica
 
 ---
 
-*Baseado no jogo de tabuleiro Pandemic de Matt Leacock*
+**Salve a humanidade antes que seja tarde demais!** 🌍💉

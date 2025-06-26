@@ -112,9 +112,21 @@ class Player {
         return cardsToRemove;
     }
     
-    shareKnowledge(otherPlayer, cardName) {
+    shareKnowledge(otherPlayer, cardName, gameState) {
+        // Use role-specific knowledge sharing if available
+        if (this.role.shareKnowledge) {
+            return this.role.shareKnowledge(this, otherPlayer, cardName, gameState);
+        }
+        
+        // Default knowledge sharing - only city card matching current location
         if (this.location !== otherPlayer.location) {
             console.log("Players must be in the same city to share knowledge");
+            return false;
+        }
+        
+        // Check if the card is the city card for current location
+        if (cardName !== this.location.name) {
+            console.log("Can only share the city card matching your current location");
             return false;
         }
         
